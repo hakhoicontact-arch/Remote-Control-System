@@ -10,7 +10,7 @@ namespace RCS.Server.Hubs
     {
         private readonly AgentCommandService _commandService;
         
-        // MẬT KHẨU QUẢN TRỊ (Bạn có thể đổi ở đây)
+        // MẬT KHẨU QUẢN TRỊ (Mặc định là "admin")
         private const string ADMIN_PASSWORD = "1901"; 
 
         public ClientHub(AgentCommandService commandService)
@@ -18,22 +18,30 @@ namespace RCS.Server.Hubs
             _commandService = commandService;
         }
 
-        // --- CHẶN KẾT NỐI NẾU KHÔNG CÓ MẬT KHẨU ---
+        // --- XÁC THỰC KẾT NỐI ---
         public override async Task OnConnectedAsync()
         {
-            // Lấy token từ Query String (?access_token=...)
             var httpContext = Context.GetHttpContext();
             
-            // SỬA LỖI: Chuyển đổi tường minh sang string để tránh lỗi CS0034
-            string token = httpContext?.Request.Query["access_token"].ToString();
+            // Lấy token một cách an toàn hơn
+            string token = "";
+            if (httpContext != null && httpContext.Request.Query.TryGetValue("access_token", out var tokenValue))
+            {
+                token = tokenValue.ToString();
+            }
+
+            // --- DEBUG LOG: In ra màn hình Server để kiểm tra ---
+            Console.WriteLine($"[ClientHub] New connection attempt from {Context.ConnectionId}");
+            Console.WriteLine($"[ClientHub] Received Token: '{token}'");
 
             if (string.IsNullOrEmpty(token) || token != ADMIN_PASSWORD)
             {
-                // Nếu sai mật khẩu, ngắt kết nối ngay lập tức
+                Console.WriteLine($"[ClientHub] ❌ Authentication FAILED. Aborting connection.");
                 Context.Abort(); 
                 return;
             }
 
+            Console.WriteLine($"[ClientHub] ✅ Authentication SUCCESS.");
             await base.OnConnectedAsync();
         }
 
@@ -45,6 +53,8 @@ namespace RCS.Server.Hubs
             }
             catch (Exception ex)
             {
+                // Nếu lỗi, log ra để biết
+                Console.WriteLine($"[ClientHub] Error sending to agent: {ex.Message}");
                 await Clients.Caller.SendAsync("ReceiveResponse", new { error = ex.Message });
             }
         }

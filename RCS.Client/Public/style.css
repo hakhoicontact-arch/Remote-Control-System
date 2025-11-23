@@ -71,3 +71,36 @@ body {
 .font-mono {
     font-family: 'JetBrains Mono', monospace;
 }
+
+/* Kích thước tam giác */
+.sort-btn span {
+    display: inline-block;
+    width: 0;
+    height: 0;
+}
+
+/* bo góc giả bằng filter blur siêu nhẹ + giảm độ sắc */
+.sort-btn span {
+    filter: blur(0.2px);
+}
+
+/* Tam giác phải ▶ */
+.triangle-right {
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 6px solid currentColor;
+}
+
+/* Tam giác xuống ▼ (tăng dần) */
+.triangle-down {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid currentColor;
+}
+
+/* Tam giác lên ▲ (giảm dần) */
+.triangle-up {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 6px solid currentColor;
+}

@@ -213,16 +213,22 @@ function sortProcessTable(column) {
 
 function getSortIcon(column) {
     const active = currentSort.column === column;
+    
+    // Logic icon: 
+    // - Inactive: Tam giác hướng phải (caret-right)
+    // - Active & Tăng dần (asc): Tam giác hướng xuống (caret-down)
+    // - Active & Giảm dần (desc): Tam giác hướng lên (caret-up)
     const iconName = active 
-        ? (currentSort.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
-        : 'fa-sort';
+        ? (currentSort.direction === 'asc' ? 'fa-caret-down' : 'fa-caret-up')
+        : 'fa-caret-right';
     
     const styleClass = active 
         ? 'text-blue-600 bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-200' 
         : 'text-gray-400 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-600';
 
-    return `<span class="sort-btn ml-2 w-6 h-6 inline-flex items-center justify-center rounded border ${styleClass} transition-all cursor-pointer" title="Sắp xếp">
-        <i class="fas ${iconName} text-xs transform ${active && currentSort.direction === 'desc' ? '-translate-y-0.5' : 'translate-y-0.5'}"></i>
+    // Điều chỉnh: w-5 h-5 (nhỏ hơn), rounded-md (bo góc nhẹ)
+    return `<span class="sort-btn ml-2 w-5 h-5 inline-flex items-center justify-center rounded-md border ${styleClass} transition-all cursor-pointer" title="Sắp xếp">
+        <i class="fas ${iconName} text-xs"></i>
     </span>`;
 }
 
