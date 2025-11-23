@@ -12,12 +12,12 @@ namespace RCS.Server.Hubs
         private readonly AgentCommandService _commandService;
         
         // DANH SÁCH TÀI KHOẢN (Username / Password)
-        // Trong thực tế nên lưu trong Database, ở đây dùng Dictionary demo
         private static readonly Dictionary<string, string> _users = new()
-        {
-            { "hakhoi1901@gmail.com", "Hakhoi1901tvtcm@" },
-            { "khiem", "12345678" },
-            { "huy", "12345678" }
+        {   
+            { "admin", "admin123" },
+            { "Khoi", "1901" },
+            { "Khiem", "admin123" },
+            { "Huy", "admin123" }
         };
 
         public ClientHub(AgentCommandService commandService)
@@ -30,32 +30,29 @@ namespace RCS.Server.Hubs
         {
             var httpContext = Context.GetHttpContext();
             
-            // Lấy username và token (password) từ Query String
             string username = "";
-            string token = "";
+            string password = "";
 
             if (httpContext != null)
             {
+                // Lấy thông tin từ đường dẫn kết nối
                 username = httpContext.Request.Query["username"].ToString();
-                token = httpContext.Request.Query["access_token"].ToString();
+                password = httpContext.Request.Query["access_token"].ToString();
             }
 
-            // --- LOG ---
-            Console.WriteLine($"[ClientHub] Login attempt: User='{username}'");
+            Console.WriteLine($"[Auth] Đăng nhập: User='{username}'");
 
-            // Kiểm tra: 
-            // 1. Username có tồn tại không?
-            // 2. Password có khớp không?
+            // Kiểm tra Tài khoản và Mật khẩu
             if (string.IsNullOrEmpty(username) || 
                 !_users.ContainsKey(username) || 
-                _users[username] != token)
+                _users[username] != password)
             {
-                Console.WriteLine($"[ClientHub] ❌ Auth FAILED for '{username}'. Aborting.");
+                Console.WriteLine($"[Auth] Thất bại. Từ chối kết nối.");
                 Context.Abort(); // Ngắt kết nối ngay lập tức -> Client sẽ nhận lỗi
                 return;
             }
 
-            Console.WriteLine($"[ClientHub] ✅ Auth SUCCESS for '{username}'.");
+            Console.WriteLine($"[Auth] Thành công. User='{username}'");
             await base.OnConnectedAsync();
         }
 
@@ -67,7 +64,6 @@ namespace RCS.Server.Hubs
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ClientHub] Error: {ex.Message}");
                 await Clients.Caller.SendAsync("ReceiveResponse", new { error = ex.Message });
             }
         }
