@@ -4,16 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RCS - Dashboard Điều Khiển</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.7/signalr.min.js"></script>
-    
-    <!-- SỬA: Dùng CSS Font Awesome thay vì JS Kit để tránh lỗi mất icon khi render lại -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -25,23 +19,39 @@
                 <div class="bg-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50">
                     <i class="fas fa-shield-alt text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800">Xác Thực Truy Cập</h2>
-                <p class="text-slate-500 text-sm mt-2">Hệ thống điều khiển từ xa RCS</p>
+                <h2 class="text-2xl font-bold text-slate-800">Đăng Nhập Hệ Thống</h2>
+                <p class="text-slate-500 text-sm mt-2">Remote Control System</p>
             </div>
             
-            <form id="login-form" class="space-y-6">
+            <form id="login-form" class="space-y-5">
+                <!-- Ô nhập Tài Khoản -->
                 <div>
-                    <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Mật khẩu quản trị</label>
+                    <label for="username" class="block text-sm font-medium text-slate-700 mb-2">Tài khoản</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-slate-400"></i>
+                        </div>
+                        <input type="text" id="username-input" class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Nhập tài khoản..." required>
+                    </div>
+                </div>
+
+                <!-- Ô nhập Mật Khẩu -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Mật khẩu</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-key text-slate-400"></i>
                         </div>
-                        <input type="password" id="password-input" class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Nhập mật khẩu (admin)..." required>
+                        <input type="password" id="password-input" class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Nhập mật khẩu..." required>
                     </div>
-                    <p id="login-error" class="text-red-500 text-xs mt-2 hidden"><i class="fas fa-exclamation-circle mr-1"></i> Mật khẩu không đúng hoặc Server chưa chạy.</p>
+                    <!-- Thông báo lỗi -->
+                    <div id="login-error" class="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg p-3 mt-3 flex items-center hidden animate-pulse">
+                        <i class="fas fa-exclamation-circle mr-2 text-lg"></i>
+                        <span>Sai tài khoản hoặc mật khẩu. Vui lòng thử lại.</span>
+                    </div>
                 </div>
                 
-                <button type="submit" id="login-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all hover:shadow-lg">
+                <button type="submit" id="login-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all hover:shadow-lg mt-6">
                     <span id="btn-text">Đăng Nhập</span>
                     <div id="btn-loader" class="hidden ml-2 loader w-4 h-4 border-2 border-white border-t-transparent"></div>
                 </button>
@@ -49,7 +59,7 @@
         </div>
     </div>
 
-    <!-- === PHẦN 2: DASHBOARD APP === -->
+    <!-- === PHẦN 2: DASHBOARD APP (Giữ nguyên như cũ) === -->
     <div id="app" class="min-h-screen flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 hidden opacity-0 transition-opacity duration-500">
         
         <header class="bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-5 mb-6 sticky top-4 z-20 flex justify-between items-center transition-all duration-300 hover:shadow-md">
@@ -74,9 +84,12 @@
                     <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Target Agent</p>
                     <p class="font-mono font-bold text-blue-600 text-lg" id="agent-id-display">...</p>
                 </div>
-                <button id="logout-btn" class="bg-red-50 text-red-600 p-3 rounded-xl hover:bg-red-100 transition-colors" title="Đăng xuất">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <span id="user-display" class="text-sm font-semibold text-slate-600 mr-2"></span>
+                    <button id="logout-btn" class="bg-red-50 text-red-600 p-3 rounded-xl hover:bg-red-100 transition-colors" title="Đăng xuất">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
             </div>
         </header>
 

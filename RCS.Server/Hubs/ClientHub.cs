@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using RCS.Common.Models;
 using RCS.Server.Services;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RCS.Server.Hubs
@@ -10,8 +11,14 @@ namespace RCS.Server.Hubs
     {
         private readonly AgentCommandService _commandService;
         
-        // MẬT KHẨU QUẢN TRỊ (Mặc định là "admin")
-        private const string ADMIN_PASSWORD = "1901"; 
+        // DANH SÁCH TÀI KHOẢN (Username / Password)
+        // Trong thực tế nên lưu trong Database, ở đây dùng Dictionary demo
+        private static readonly Dictionary<string, string> _users = new()
+        {
+            { "hakhoi1901@gmail.com", "Hakhoi1901tvtcm@" },
+            { "khiem", "12345678" },
+            { "huy", "12345678" }
+        };
 
         public ClientHub(AgentCommandService commandService)
         {
@@ -23,25 +30,32 @@ namespace RCS.Server.Hubs
         {
             var httpContext = Context.GetHttpContext();
             
-            // Lấy token một cách an toàn hơn
+            // Lấy username và token (password) từ Query String
+            string username = "";
             string token = "";
-            if (httpContext != null && httpContext.Request.Query.TryGetValue("access_token", out var tokenValue))
+
+            if (httpContext != null)
             {
-                token = tokenValue.ToString();
+                username = httpContext.Request.Query["username"].ToString();
+                token = httpContext.Request.Query["access_token"].ToString();
             }
 
-            // --- DEBUG LOG: In ra màn hình Server để kiểm tra ---
-            Console.WriteLine($"[ClientHub] New connection attempt from {Context.ConnectionId}");
-            Console.WriteLine($"[ClientHub] Received Token: '{token}'");
+            // --- LOG ---
+            Console.WriteLine($"[ClientHub] Login attempt: User='{username}'");
 
-            if (string.IsNullOrEmpty(token) || token != ADMIN_PASSWORD)
+            // Kiểm tra: 
+            // 1. Username có tồn tại không?
+            // 2. Password có khớp không?
+            if (string.IsNullOrEmpty(username) || 
+                !_users.ContainsKey(username) || 
+                _users[username] != token)
             {
-                Console.WriteLine($"[ClientHub] ❌ Authentication FAILED. Aborting connection.");
-                Context.Abort(); 
+                Console.WriteLine($"[ClientHub] ❌ Auth FAILED for '{username}'. Aborting.");
+                Context.Abort(); // Ngắt kết nối ngay lập tức -> Client sẽ nhận lỗi
                 return;
             }
 
-            Console.WriteLine($"[ClientHub] ✅ Authentication SUCCESS.");
+            Console.WriteLine($"[ClientHub] ✅ Auth SUCCESS for '{username}'.");
             await base.OnConnectedAsync();
         }
 
@@ -53,8 +67,7 @@ namespace RCS.Server.Hubs
             }
             catch (Exception ex)
             {
-                // Nếu lỗi, log ra để biết
-                Console.WriteLine($"[ClientHub] Error sending to agent: {ex.Message}");
+                Console.WriteLine($"[ClientHub] Error: {ex.Message}");
                 await Clients.Caller.SendAsync("ReceiveResponse", new { error = ex.Message });
             }
         }

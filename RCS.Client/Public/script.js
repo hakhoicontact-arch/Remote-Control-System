@@ -3,7 +3,7 @@ const connectionUrl = "http://localhost:5000/clienthub";
 let connection = null;
 let currentView = 'applications';
 let agentId = 'Agent_12345'; 
-let authToken = ''; 
+let currentUser = ''; // Lưu user hiện tại
 
 document.getElementById('agent-id-display').textContent = agentId;
 
@@ -28,9 +28,10 @@ async function sendCommand(action, params = {}) {
     }
 }
 
-function startSignalR(token) {
+function startSignalR(username, password) {
     return new Promise((resolve, reject) => {
-        const finalUrl = `${connectionUrl}?access_token=${encodeURIComponent(token)}`;
+        // Gửi cả username và password qua query string
+        const finalUrl = `${connectionUrl}?username=${encodeURIComponent(username)}&access_token=${encodeURIComponent(password)}`;
 
         connection = new signalR.HubConnectionBuilder()
             .withUrl(finalUrl)
@@ -52,8 +53,12 @@ function startSignalR(token) {
 
         connection.onclose((error) => {
             updateStatus("Mất kết nối. Đang thử lại...", 'error');
-            if(error && error.message.includes("StatusCode: 401")) {
-                doLogout();
+            // Nếu lỗi do authentication (401 hoặc connection closed) thì logout
+            if(error && (error.message.includes("StatusCode: 401") || error.message.includes("closed"))) {
+                // Chỉ logout nếu đang ở màn hình Dashboard, tránh loop ở màn login
+                if (!document.getElementById('app').classList.contains('hidden')) {
+                    doLogout();
+                }
             }
         });
 
@@ -72,6 +77,7 @@ function startSignalR(token) {
                 resolve();
             })
             .catch(err => {
+                // Lỗi kết nối ban đầu (bao gồm sai pass) sẽ rơi vào đây
                 console.error("Lỗi kết nối: ", err);
                 reject(err);
             });
@@ -85,20 +91,25 @@ function refreshCurrentViewData() {
 
 // --- XỬ LÝ LOGIN / LOGOUT ---
 
-function doLogin(password) {
+function doLogin(username, password) {
     const btnText = document.getElementById('btn-text');
     const btnLoader = document.getElementById('btn-loader');
     const errorMsg = document.getElementById('login-error');
     const loginBtn = document.getElementById('login-btn');
 
-    btnText.textContent = "Đang kết nối...";
+    // UI Loading state
+    btnText.textContent = "Đang xác thực...";
     btnLoader.classList.remove('hidden');
     errorMsg.classList.add('hidden');
     loginBtn.disabled = true;
 
-    startSignalR(password)
+    // Gọi hàm kết nối
+    startSignalR(username, password)
         .then(() => {
-            authToken = password;
+            // 1. Đăng nhập thành công -> Chuyển màn hình
+            currentUser = username;
+            document.getElementById('user-display').textContent = `Hi, ${username}`;
+            
             const loginScreen = document.getElementById('login-screen');
             const appScreen = document.getElementById('app');
 
@@ -109,10 +120,16 @@ function doLogin(password) {
                 setTimeout(() => appScreen.classList.remove('opacity-0'), 50);
             }, 500);
         })
-        .catch(() => {
+        .catch((err) => {
+            // 2. Đăng nhập thất bại (Sai pass hoặc lỗi Server) -> Ở lại màn hình login và báo lỗi
+            console.log("Login failed:", err);
+            
             btnText.textContent = "Đăng Nhập";
             btnLoader.classList.add('hidden');
+            
+            // Hiển thị thông báo lỗi
             errorMsg.classList.remove('hidden');
+            // Reset nút bấm
             loginBtn.disabled = false;
         });
 }
@@ -206,7 +223,6 @@ function sortProcessTable(column) {
 function getSortIcon(column) {
     const active = currentSort.column === column;
     
-    // Logic icon: Chưa chọn -> Caret Right, Chọn -> Caret Up/Down
     const iconName = active 
         ? (currentSort.direction === 'asc' ? 'fa-caret-down' : 'fa-caret-up')
         : 'fa-caret-right';
@@ -232,7 +248,6 @@ function updateSortIcons() {
             
             if (active) {
                 span.classList.add('text-blue-600', 'bg-blue-50', 'border-blue-200', 'shadow-sm', 'ring-1', 'ring-blue-200');
-                // Logic: Tăng dần -> Mũi nhọn hướng xuống (Down), Giảm dần -> Hướng lên (Up)
                 icon.className = `fas ${currentSort.direction === 'asc' ? 'fa-caret-down' : 'fa-caret-up'} text-xs`;
             } else {
                 span.classList.add('text-gray-400', 'bg-gray-50', 'border-gray-200', 'hover:bg-gray-100', 'hover:text-gray-600');
@@ -733,8 +748,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NEW: Bind Login/Logout events ---
     document.getElementById('login-form').addEventListener('submit', (e) => {
         e.preventDefault();
+        const username = document.getElementById('username-input').value;
         const password = document.getElementById('password-input').value;
-        doLogin(password);
+        doLogin(username, password);
     });
 
     document.getElementById('logout-btn').addEventListener('click', doLogout);
