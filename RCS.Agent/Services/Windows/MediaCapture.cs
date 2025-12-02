@@ -1,54 +1,36 @@
+using OpenCvSharp; // Thư viện mới
+// using OpenCvSharp.Extensions; // Đã xóa dòng này để fix lỗi thiếu reference
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
+// System.Windows.Forms vẫn cần để lấy độ phân giải màn hình
 using System.Windows.Forms; 
-using System.Threading;
 
 namespace RCS.Agent.Services.Windows
 {
     public class MediaCapture : IDisposable
     {
-        // --- API WINDOWS ---
-        [DllImport("user32.dll")]
-        private static extern bool SetProcessDPIAware();
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("avicap32.dll")]
-        private static extern IntPtr capCreateCaptureWindowA(string lpszWindowName, int dwStyle, int x, int y, int nWidth, int nHeight, IntPtr hwndParent, int nID);
-
-        [DllImport("user32.dll")]
-        private static extern bool DestroyWindow(IntPtr hwnd);
-
-        // Hằng số Webcam
-        private const int WM_CAP_START = 0x400;
-        private const int WM_CAP_DRIVER_CONNECT = WM_CAP_START + 10;
-        private const int WM_CAP_DRIVER_DISCONNECT = WM_CAP_START + 11;
-        private const int WM_CAP_GRAB_FRAME = WM_CAP_START + 60;
-        private const int WM_CAP_FILE_SAVEDIB = WM_CAP_START + 25;
-
-        private IntPtr _hWndC = IntPtr.Zero;
-        private bool _isWebcamReady = false;
+        // --- 1. PHẦN CHỤP MÀN HÌNH (Giữ nguyên dùng GDI+) ---
+        [DllImport("user32.dll")] private static extern bool SetProcessDPIAware();
 
         public MediaCapture()
         {
             try { SetProcessDPIAware(); } catch { }
         }
 
-        // --- 1. CHỤP MÀN HÌNH ---
         public string CaptureScreenBase64()
         {
             try
             {
-                Rectangle bounds = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
+                Rectangle bounds = Screen.PrimaryScreen.Bounds;
                 using (Bitmap bitmap = new Bitmap(bounds.Width, bounds.Height))
                 {
                     using (Graphics g = Graphics.FromImage(bitmap))
                     {
-                        g.CopyFromScreen(Point.Empty, Point.Empty, bounds.Size);
+                        // SỬA LỖI CS0104: Chỉ định rõ System.Drawing.Point để tránh nhầm với OpenCvSharp.Point
+                        g.CopyFromScreen(System.Drawing.Point.Empty, System.Drawing.Point.Empty, bounds.Size);
                     }
                     return BitmapToBase64(bitmap);
                 }
@@ -56,90 +38,85 @@ namespace RCS.Agent.Services.Windows
             catch { return ""; }
         }
 
-        // --- 2. QUẢN LÝ WEBCAM (SỬA LỖI CRASH) ---
+        // --- 2. PHẦN WEBCAM (SỬ DỤNG OPENCV - KHÔNG CẦN EXTENSIONS) ---
+        
+        private VideoCapture _capture;
+        private bool _isWebcamReady = false;
 
-        // Hàm này chỉ gọi 1 lần khi bắt đầu Stream
         public bool StartWebcam()
         {
-            if (_isWebcamReady) return true;
+            if (_isWebcamReady && _capture != null && _capture.IsOpened()) return true;
 
             try
             {
-                _hWndC = capCreateCaptureWindowA("RCS_Webcam", 0, 0, 0, 320, 240, IntPtr.Zero, 0);
-                if (_hWndC != IntPtr.Zero)
+                // Mở Camera số 0
+                _capture = new VideoCapture(0);
+                
+                // Cấu hình Camera
+                _capture.Set(VideoCaptureProperties.FrameWidth, 640);
+                _capture.Set(VideoCaptureProperties.FrameHeight, 480);
+                _capture.Set(VideoCaptureProperties.Fps, 30);
+
+                if (_capture.IsOpened())
                 {
-                    // Kết nối driver
-                    IntPtr result = SendMessage(_hWndC, WM_CAP_DRIVER_CONNECT, IntPtr.Zero, IntPtr.Zero);
-                    if (result != IntPtr.Zero)
-                    {
-                        _isWebcamReady = true;
-                        return true;
-                    }
+                    _isWebcamReady = true;
+                    Console.WriteLine("[Webcam] OpenCV connected successfully!");
+                    return true;
                 }
+                
+                Console.WriteLine("[Webcam] OpenCV cannot open camera 0.");
                 return false;
             }
-            catch 
+            catch (Exception ex)
             {
+                Console.WriteLine($"[Webcam Init Error] {ex.Message}");
                 StopWebcam();
-                return false; 
+                return false;
             }
         }
 
-        // Hàm này gọi 1 lần khi dừng Stream
         public void StopWebcam()
         {
-            if (_hWndC != IntPtr.Zero)
+            try
             {
-                try 
+                if (_capture != null)
                 {
-                    SendMessage(_hWndC, WM_CAP_DRIVER_DISCONNECT, IntPtr.Zero, IntPtr.Zero);
-                    DestroyWindow(_hWndC);
-                } 
-                catch { }
-                _hWndC = IntPtr.Zero;
+                    _capture.Release();
+                    _capture.Dispose();
+                    _capture = null;
+                }
             }
+            catch { }
             _isWebcamReady = false;
         }
 
-        // Hàm này gọi liên tục trong vòng lặp (Chỉ chụp, không kết nối lại)
-        public string GetWebcamFrame()
+        public byte[] GetWebcamFrameBytes()
         {
-            if (!_isWebcamReady) return "";
+            if (!_isWebcamReady || _capture == null) return null;
 
             try
             {
-                // 1. Ra lệnh chụp
-                SendMessage(_hWndC, WM_CAP_GRAB_FRAME, IntPtr.Zero, IntPtr.Zero);
-
-                // 2. Lưu ra file tạm
-                string tempFile = Path.Combine(Path.GetTempPath(), "rcs_cam.bmp");
-                IntPtr hFileName = Marshal.StringToHGlobalAnsi(tempFile);
-                SendMessage(_hWndC, WM_CAP_FILE_SAVEDIB, IntPtr.Zero, hFileName);
-                Marshal.FreeHGlobal(hFileName);
-
-                // 3. Đọc file AN TOÀN (Fix lỗi Out of Memory)
-                // Thay vì dùng Image.FromFile (gây lock file), ta đọc bytes trực tiếp
-                if (File.Exists(tempFile))
+                using (Mat frame = new Mat())
                 {
-                    byte[] imageBytes;
-                    try 
+                    // Lấy frame từ camera
+                    if (_capture.Read(frame) && !frame.Empty())
                     {
-                        imageBytes = File.ReadAllBytes(tempFile); 
-                    }
-                    catch (IOException) 
-                    { 
-                        return ""; // File đang bị lock bởi Webcam driver, bỏ qua frame này
-                    }
-
-                    using (MemoryStream ms = new MemoryStream(imageBytes))
-                    using (Bitmap bmp = new Bitmap(ms))
-                    {
-                        return BitmapToBase64(bmp, 40L); // Nén 40% cho nhẹ mạng
+                        // SỬA LỖI: Dùng Cv2.ImEncode thay vì BitmapConverter
+                        // Cách này nén thẳng Mat sang mảng byte JPEG mà không cần System.Drawing
+                        // Giúp loại bỏ sự phụ thuộc vào OpenCvSharp.Extensions
+                        
+                        var encodeParams = new int[] { (int)ImwriteFlags.JpegQuality, 50 };
+                        Cv2.ImEncode(".jpg", frame, out byte[] buf, encodeParams);
+                        
+                        return buf;
                     }
                 }
-                return "";
+                return null;
             }
-            catch { return ""; }
+            catch 
+            { 
+                return null; 
+            }
         }
 
         public void Dispose()
@@ -147,15 +124,15 @@ namespace RCS.Agent.Services.Windows
             StopWebcam();
         }
 
+        // Helper: Bitmap -> Base64 String (Chỉ dùng cho chụp màn hình)
         private string BitmapToBase64(Bitmap bitmap, long quality = 75L)
         {
             using (MemoryStream ms = new MemoryStream())
             {
                 ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
-                System.Drawing.Imaging.Encoder myEncoder = System.Drawing.Imaging.Encoder.Quality;
-                EncoderParameters myEncoderParameters = new EncoderParameters(1);
-                myEncoderParameters.Param[0] = new EncoderParameter(myEncoder, quality);
-                bitmap.Save(ms, jpgEncoder, myEncoderParameters);
+                var encoderParams = new EncoderParameters(1);
+                encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality);
+                bitmap.Save(ms, jpgEncoder, encoderParams);
                 return "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
             }
         }

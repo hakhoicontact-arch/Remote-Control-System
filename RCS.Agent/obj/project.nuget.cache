@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "kGSLyBdDBpw=",
+  "dgSpecHash": "6EQMpLw8Y/0=",
   "success": true,
   "projectFilePath": "D:\\Code\\MMT\\RCS\\RCS.Agent\\RCS.Agent.csproj",
   "expectedPackageFiles": [
@@ -18,7 +18,11 @@
     "C:\\Users\\Hakhoi\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
     "C:\\Users\\Hakhoi\\.nuget\\packages\\microsoft.extensions.options\\8.0.0\\microsoft.extensions.options.8.0.0.nupkg.sha512",
     "C:\\Users\\Hakhoi\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "C:\\Users\\Hakhoi\\.nuget\\packages\\opencvsharp4\\4.11.0.20250507\\opencvsharp4.4.11.0.20250507.nupkg.sha512",
+    "C:\\Users\\Hakhoi\\.nuget\\packages\\opencvsharp4.runtime.win\\4.11.0.20250507\\opencvsharp4.runtime.win.4.11.0.20250507.nupkg.sha512",
+    "C:\\Users\\Hakhoi\\.nuget\\packages\\opencvsharp4.windows\\4.11.0.20250507\\opencvsharp4.windows.4.11.0.20250507.nupkg.sha512",
     "C:\\Users\\Hakhoi\\.nuget\\packages\\system.io.pipelines\\8.0.0\\system.io.pipelines.8.0.0.nupkg.sha512",
+    "C:\\Users\\Hakhoi\\.nuget\\packages\\system.memory\\4.6.3\\system.memory.4.6.3.nupkg.sha512",
     "C:\\Users\\Hakhoi\\.nuget\\packages\\system.threading.channels\\8.0.0\\system.threading.channels.8.0.0.nupkg.sha512"
   ],
   "logs": []

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR.Client;
-using RCS.Common.Models; // Quan trọng: Thêm dòng này
-using RCS.Common.Protocols; // Quan trọng: Thêm dòng này
+using RCS.Common.Models;
+using RCS.Common.Protocols;
 using System;
 using System.Threading.Tasks;
 

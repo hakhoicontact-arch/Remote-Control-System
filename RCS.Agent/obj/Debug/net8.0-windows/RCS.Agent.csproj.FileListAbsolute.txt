@@ -17,7 +17,12 @@ D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\Microsoft.Extensions.Logging.
 D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\Microsoft.Extensions.Logging.Abstractions.dll
 D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\Microsoft.Extensions.Options.dll
 D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\Microsoft.Extensions.Primitives.dll
+D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\OpenCvSharp.dll
 D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\System.IO.Pipelines.dll
+D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\runtimes\win-x64\native\OpenCvSharpExtern.dll
+D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\runtimes\win-x64\native\opencv_videoio_ffmpeg4110_64.dll
+D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\runtimes\win-x86\native\OpenCvSharpExtern.dll
+D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\runtimes\win-x86\native\opencv_videoio_ffmpeg4110.dll
 D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\RCS.Common.dll
 D:\Code\MMT\RCS\RCS.Agent\bin\Debug\net8.0-windows\RCS.Common.pdb
 D:\Code\MMT\RCS\RCS.Agent\obj\Debug\net8.0-windows\RCS.Agent.csproj.AssemblyReference.cache

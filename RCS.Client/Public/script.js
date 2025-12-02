@@ -1,4 +1,5 @@
 // --- CÁC HẰNG SỐ VÀ KHỞI TẠO CHUNG ---
+// const connectionUrl = "[http://192.168.1.10:5000/clienthub](http://192.168.1.10:5000/clienthub)"; 
 const connectionUrl = "http://localhost:5000/clienthub"; 
 let connection = null;
 let currentView = 'applications';
@@ -10,27 +11,10 @@ document.getElementById('agent-id-display').textContent = agentId;
 let globalProcessData = []; 
 let currentSort = { column: 'pid', direction: 'asc' }; 
 
-// --- HÀM SIGNALR VÀ GIAO TIẾP ---
 
-async function sendCommand(action, params = {}) {
-    const command = { action: action, params: params };
-    console.log(`[CLIENT] Gửi lệnh: ${action}`, command);
-
-    if (connection && connection.state === signalR.HubConnectionState.Connected) {
-        try {
-            await connection.invoke("SendToAgent", agentId, command);
-        } catch (err) {
-            console.error("Lỗi khi gửi lệnh SignalR:", err);
-            updateStatus(`Lỗi khi gửi lệnh: ${err.message}`, 'error');
-        }
-    } else {
-        updateStatus("Chưa kết nối đến Server.", 'warning');
-    }
-}
-
+// --- HÀM SIGNALR CORE ---
 function startSignalR(username, password) {
     return new Promise((resolve, reject) => {
-        // Gửi cả username và password qua query string
         const finalUrl = `${connectionUrl}?username=${encodeURIComponent(username)}&access_token=${encodeURIComponent(password)}`;
 
         connection = new signalR.HubConnectionBuilder()
@@ -38,77 +22,39 @@ function startSignalR(username, password) {
             .withAutomaticReconnect()
             .build();
 
-        connection.on("ReceiveResponse", (response) => {
-            console.log("[SERVER] Nhận Response:", response);
-            handleResponse(response);
-        });
-
-        connection.on("ReceiveUpdate", (update) => {
-            handleRealtimeUpdate(update);
-        });
-
-        connection.on("ReceiveBinaryChunk", (data) => {
-            handleBinaryStream(data);
-        });
+        connection.on("ReceiveResponse", handleResponse);
+        connection.on("ReceiveUpdate", handleRealtimeUpdate);
+        connection.on("ReceiveBinaryChunk", handleBinaryStream);
 
         connection.onclose((error) => {
-            updateStatus("Mất kết nối. Đang thử lại...", 'error');
-            // Nếu lỗi do authentication (401 hoặc connection closed) thì logout
-            if(error && (error.message.includes("StatusCode: 401") || error.message.includes("closed"))) {
-                // Chỉ logout nếu đang ở màn hình Dashboard, tránh loop ở màn login
-                if (!document.getElementById('app').classList.contains('hidden')) {
-                    doLogout();
-                }
+            const isDashboardVisible = !document.getElementById('app').classList.contains('hidden');
+            if (isDashboardVisible) {
+                updateStatus("Mất kết nối. Vui lòng đăng nhập lại.", 'error');
+                setTimeout(doLogout, 2000);
             }
         });
 
-        connection.onreconnecting(() => updateStatus("Đang kết nối lại...", 'warning'));
-        
-        connection.onreconnected(() => {
-            updateStatus("Đã kết nối an toàn", 'success');
-            document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse";
-        });
-
-        connection.start()
-            .then(() => {
-                updateStatus(`Đã kết nối an toàn`, 'success');
-                document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse";
-                refreshCurrentViewData();
-                resolve();
-            })
-            .catch(err => {
-                // Lỗi kết nối ban đầu (bao gồm sai pass) sẽ rơi vào đây
-                console.error("Lỗi kết nối: ", err);
-                reject(err);
-            });
+        connection.start().then(() => resolve()).catch(err => reject(err));
     });
 }
 
-function refreshCurrentViewData() {
-    if (currentView === 'applications') sendCommand('app_list');
-    if (currentView === 'processes') sendCommand('process_list');
-}
-
-// --- XỬ LÝ LOGIN / LOGOUT ---
-
+// --- LOGIC ĐĂNG NHẬP / ĐĂNG XUẤT ---
 function doLogin(username, password) {
     const btnText = document.getElementById('btn-text');
     const btnLoader = document.getElementById('btn-loader');
     const errorMsg = document.getElementById('login-error');
     const loginBtn = document.getElementById('login-btn');
 
-    // UI Loading state
     btnText.textContent = "Đang xác thực...";
     btnLoader.classList.remove('hidden');
     errorMsg.classList.add('hidden');
     loginBtn.disabled = true;
 
-    // Gọi hàm kết nối
     startSignalR(username, password)
         .then(() => {
-            // 1. Đăng nhập thành công -> Chuyển màn hình
             currentUser = username;
             document.getElementById('user-display').textContent = `Hi, ${username}`;
+            updateStatus("Đã kết nối an toàn", "success");
             
             const loginScreen = document.getElementById('login-screen');
             const appScreen = document.getElementById('app');
@@ -117,20 +63,18 @@ function doLogin(username, password) {
             setTimeout(() => {
                 loginScreen.classList.add('hidden');
                 appScreen.classList.remove('hidden');
-                setTimeout(() => appScreen.classList.remove('opacity-0'), 50);
+                setTimeout(() => {
+                    appScreen.classList.remove('opacity-0');
+                    refreshCurrentViewData();
+                }, 50);
             }, 500);
         })
         .catch((err) => {
-            // 2. Đăng nhập thất bại (Sai pass hoặc lỗi Server) -> Ở lại màn hình login và báo lỗi
-            console.log("Login failed:", err);
-            
+            console.warn("Đăng nhập thất bại:", err);
             btnText.textContent = "Đăng Nhập";
             btnLoader.classList.add('hidden');
-            
-            // Hiển thị thông báo lỗi
-            errorMsg.classList.remove('hidden');
-            // Reset nút bấm
             loginBtn.disabled = false;
+            errorMsg.classList.remove('hidden');
         });
 }
 
@@ -139,10 +83,23 @@ function doLogout() {
     location.reload(); 
 }
 
-// --- HÀM XỬ LÝ PHẢN HỒI ---
+// --- HÀM GỬI LỆNH ---
+async function sendCommand(action, params = {}) {
+    if (connection && connection.state === signalR.HubConnectionState.Connected) {
+        try {
+            await connection.invoke("SendToAgent", agentId, { action, params });
+        } catch (err) {
+            console.error("Lỗi gửi lệnh:", err);
+        }
+    }
+}
 
-let screenshotPending = false;
+function refreshCurrentViewData() {
+    if (currentView === 'applications') sendCommand('app_list');
+    if (currentView === 'processes') sendCommand('process_list');
+}
 
+// --- XỬ LÝ PHẢN HỒI ---
 function handleResponse(data) {
     if (!data) return;
 
@@ -153,23 +110,32 @@ function handleResponse(data) {
         globalProcessData = data.response;
         updateProcessTable(); 
     }
-    else if (currentView === 'system') {
-        if (data.response === 'ok' || data.response === 'done') {
-             showModal("Thành Công", "Lệnh đã được gửi thành công đến Agent.", false, true);
+    // SỬA: Xử lý sự kiện "stopped" của Webcam
+    else if (data.response === 'stopped') { 
+        if(currentView === 'keylogger') document.getElementById('keylogger-status').textContent = "Trạng thái: Đã dừng.";
+        if(currentView === 'applications') sendCommand('app_list');
+        
+        // QUAN TRỌNG: Dọn dẹp khung hình Webcam khi nhận lệnh dừng
+        if(currentView === 'webcam') {
+            const videoElement = document.getElementById('webcam-stream');
+            const placeholder = document.getElementById('webcam-placeholder');
+            
+            if(videoElement) {
+                videoElement.style.display = 'none'; // Ẩn thẻ video
+                videoElement.src = ""; // Xóa dữ liệu ảnh cũ để không hiện lại frame cuối
+            }
+            if(placeholder) {
+                placeholder.style.display = 'flex'; // Hiện lại placeholder (text 'Camera Off')
+                placeholder.innerHTML = '<i class="fas fa-video-slash fa-2x mb-2 text-slate-400"></i><br>Webcam đang tắt';
+            }
         }
     }
-    else if (currentView === 'keylogger' && data.response === 'stopped') {
-        document.getElementById('keylogger-status').textContent = "Trạng thái: Đã dừng.";
-    }
-    else if (data.response === 'done' || data.response === 'ok' || data.response === 'started' || data.response === 'stopped' || data.response === 'killed') {
-        console.log("Command executed successfully: " + data.response);
-        if (data.response === 'stopped' && currentView === 'applications') sendCommand('app_list');
-        if (data.response === 'killed' && currentView === 'processes') sendCommand('process_list');
-    }
+    else if (data.response === 'killed' && currentView === 'processes') sendCommand('process_list');
+    else if (data.response === 'done' || data.response === 'ok') showModal("Thông báo", "Thao tác thành công.", null, true);
 }
 
 function handleRealtimeUpdate(data) {
-    if (currentView === 'keylogger' && data.event === 'key_pressed' && data.data) {
+    if (currentView === 'keylogger' && data.event === 'key_pressed') {
         const logArea = document.getElementById('keylogger-log');
         if (logArea) {
             logArea.value += data.data;
@@ -180,31 +146,150 @@ function handleRealtimeUpdate(data) {
 
 function handleBinaryStream(data) {
     const view = currentView;
-    
-    if (view === 'screenshot' && screenshotPending) {
-        const imgElement = document.getElementById('screenshot-image');
-        const placeholder = document.getElementById('screenshot-placeholder');
-        
-        if (imgElement && data.startsWith("data:")) {
-            imgElement.src = data;
-            imgElement.style.display = 'block';
-            placeholder.style.display = 'none';
-            document.getElementById('save-screenshot-btn').classList.remove('hidden');
-            screenshotPending = false;
-            updateStatus("Đã nhận ảnh.", 'success');
-        }
+    if (view === 'screenshot' && screenshotPending && data.startsWith("data:")) {
+        const img = document.getElementById('screenshot-image');
+        img.src = data;
+        img.style.display = 'block';
+        document.getElementById('screenshot-placeholder').style.display = 'none';
+        document.getElementById('save-screenshot-btn').classList.remove('hidden');
+        screenshotPending = false;
+        updateStatus("Đã nhận ảnh.", 'success');
     }
-    
-    if (view === 'webcam') {
-        const videoElement = document.getElementById('webcam-stream');
+    if (view === 'webcam' && data.startsWith("data:image")) {
+        const video = document.getElementById('webcam-stream');
         const placeholder = document.getElementById('webcam-placeholder');
-        if (videoElement && data.startsWith("data:image")) {
+        
+        if (video && data.length > 100) { 
+            // Chỉ hiện video khi có dữ liệu mới
             if (placeholder) placeholder.style.display = 'none';
-            videoElement.style.display = 'block';
-            videoElement.src = data;
+            video.style.display = 'block';
+            video.src = data;
         }
     }
 }
+
+// --- UI HELPER FUNCTIONS ---
+function updateStatus(msg, type) {
+    const el = document.getElementById('status-display');
+    const dot = document.getElementById('status-dot');
+    el.textContent = msg;
+    if (type === 'success') {
+        el.className = "text-xs font-semibold text-green-600 uppercase";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse";
+    } else {
+        el.className = "text-xs font-semibold text-red-600 uppercase";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+    }
+}
+
+function sortProcessTable(column) {
+    if (currentSort.column === column) currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    else {
+        currentSort.column = column;
+        currentSort.direction = column === 'name' ? 'asc' : 'desc'; 
+    }
+    updateProcessTable();
+}
+
+function getSortIcon(column) {
+    const active = currentSort.column === column;
+    const iconName = active ? (currentSort.direction === 'asc' ? 'fa-caret-down' : 'fa-caret-up') : 'fa-caret-right';
+    const style = active ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-gray-400 bg-gray-50 border-gray-200';
+    return `<span class="ml-2 w-5 h-5 inline-flex items-center justify-center rounded-md border ${style} cursor-pointer"><i class="fas ${iconName} text-xs"></i></span>`;
+}
+
+function updateSortIcons() {
+    ['pid', 'name', 'cpu', 'mem'].forEach(col => {
+        const span = document.querySelector(`th[onclick="sortProcessTable('${col}')"] span`);
+        if(span) span.outerHTML = getSortIcon(col);
+    });
+}
+
+function renderAppLayout() {
+    return `<div class="space-y-4"><div class="flex items-center space-x-3"><button id="list-apps-btn" class="btn-primary bg-blue-600 text-white px-4 py-2 rounded-lg">Làm Mới</button><input id="app-start-name" type="text" placeholder="Tên ứng dụng..." class="p-2 border rounded-lg"><button id="start-app-btn" class="btn-primary bg-green-600 text-white px-4 py-2 rounded-lg">Mở</button></div><div class="table-container bg-gray-50 rounded-lg"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-200 sticky top-0"><tr><th class="px-6 py-3 text-left text-xs font-bold uppercase">Tên</th><th class="px-6 py-3 text-left text-xs font-bold uppercase">Đường Dẫn</th><th class="px-6 py-3 text-center text-xs font-bold uppercase">Thao Tác</th></tr></thead><tbody id="app-list-body" class="bg-white divide-y divide-gray-200"></tbody></table></div></div>`;
+}
+
+function updateAppTable(apps) {
+    const tbody = document.getElementById('app-list-body');
+    if(!apps.length) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">Không có dữ liệu</td></tr>'; return; }
+    tbody.innerHTML = apps.map(a => `<tr><td class="px-6 py-4 text-sm font-medium">${a.name}</td><td class="px-6 py-4 text-xs text-gray-500 truncate max-w-xs">${a.path}</td><td class="px-6 py-4 text-center"><button data-id="${a.name}" class="stop-app-btn bg-red-50 text-red-600 px-3 py-1 rounded hover:bg-red-100"><i class="fas fa-times"></i> Đóng</button></td></tr>`).join('');
+    
+    document.querySelectorAll('.stop-app-btn').forEach(btn => {
+        btn.onclick = () => sendCommand('app_stop', { name: btn.dataset.id });
+    });
+}
+
+function renderProcessLayout() {
+    return `<div class="space-y-4"><div class="flex justify-between"><button id="list-proc-btn" class="btn-primary bg-blue-600 text-white px-4 py-2 rounded-lg">Cập Nhật</button><div class="text-sm font-mono"><span id="total-cpu" class="mr-4 text-blue-600">CPU: 0%</span><span id="total-mem" class="text-purple-600">RAM: 0 MB</span></div></div><div class="table-container bg-gray-50 rounded-lg"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-200 sticky top-0 select-none"><tr><th class="px-6 py-3 cursor-pointer" onclick="sortProcessTable('pid')">PID ${getSortIcon('pid')}</th><th class="px-6 py-3 cursor-pointer" onclick="sortProcessTable('name')">Tên ${getSortIcon('name')}</th><th class="px-6 py-3 cursor-pointer" onclick="sortProcessTable('cpu')">CPU ${getSortIcon('cpu')}</th><th class="px-6 py-3 cursor-pointer" onclick="sortProcessTable('mem')">RAM ${getSortIcon('mem')}</th><th class="px-6 py-3 text-center">Thao Tác</th></tr></thead><tbody id="process-list-body" class="bg-white divide-y divide-gray-200"></tbody></table></div></div>`;
+}
+
+function updateProcessTable() {
+    const tbody = document.getElementById('process-list-body');
+    let totalCpu = 0, totalMem = 0;
+    globalProcessData.forEach(p => {
+        totalCpu += parseFloat(p.cpu) || 0;
+        totalMem += parseFloat(p.mem) || 0;
+    });
+    document.getElementById('total-cpu').textContent = `CPU: ${totalCpu.toFixed(1)}%`;
+    document.getElementById('total-mem').textContent = `RAM: ${totalMem.toFixed(0)} MB`;
+
+    const sorted = [...globalProcessData].sort((a,b) => {
+        let valA, valB;
+        if(currentSort.column === 'pid') { valA = a.pid; valB = b.pid; }
+        else if(currentSort.column === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
+        else if(currentSort.column === 'cpu') { valA = parseFloat(a.cpu); valB = parseFloat(b.cpu); }
+        else { valA = parseFloat(a.mem); valB = parseFloat(b.mem); }
+        return currentSort.direction === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+    });
+
+    tbody.innerHTML = sorted.map(p => `<tr><td class="px-6 py-4 text-sm font-mono">${p.pid}</td><td class="px-6 py-4 text-sm font-medium">${p.name}</td><td class="px-6 py-4 text-sm ${parseFloat(p.cpu)>50?'text-red-600 text-bold':''}">${p.cpu}</td><td class="px-6 py-4 text-sm text-gray-500">${p.mem}</td><td class="px-6 py-4 text-center"><button onclick="sendCommand('process_stop', {pid: ${p.pid}})" class="text-red-600 hover:text-red-800"><i class="fas fa-times-circle"></i> Kill</button></td></tr>`).join('');
+    updateSortIcons();
+}
+
+function renderScreenshotView() {
+    return `<div class="space-y-6 text-center"><button id="capture-btn" class="btn-primary bg-blue-600 text-white px-6 py-3 rounded-lg">Chụp Màn Hình</button><div class="bg-gray-100 border-2 border-dashed p-6"><p id="screenshot-placeholder" class="text-gray-500">Chưa có ảnh</p><img id="screenshot-image" class="hidden max-w-full mx-auto shadow-lg"></div><button id="save-screenshot-btn" class="hidden btn-primary bg-green-600 text-white px-6 py-3 rounded-lg">Lưu Ảnh</button></div>`;
+}
+function renderKeyloggerDisplay() { return `<div class="space-y-4"><div class="space-x-2"><button id="start-key" class="bg-green-600 text-white px-4 py-2 rounded">Bắt Đầu</button><button id="stop-key" class="bg-red-600 text-white px-4 py-2 rounded">Dừng</button><button id="clear-key" class="bg-gray-500 text-white px-4 py-2 rounded">Xóa</button></div><p id="keylogger-status" class="text-blue-600 font-bold"></p><textarea id="keylogger-log" class="w-full h-64 border p-2 font-mono" readonly></textarea></div>`; }
+function renderWebcamControl() { return `<div class="space-y-4 text-center"><div class="space-x-2"><button id="cam-on" class="bg-green-600 text-white px-4 py-2 rounded">Bật Cam</button><button id="cam-off" class="bg-red-600 text-white px-4 py-2 rounded">Tắt Cam</button></div><div class="bg-black rounded-lg overflow-hidden min-h-[300px] relative flex items-center justify-center"><div id="webcam-placeholder" class="text-gray-500 flex flex-col items-center"><i class="fas fa-video-slash fa-2x mb-2 text-slate-600"></i><span>Camera Off</span></div><img id="webcam-stream" class="w-full h-auto block" style="display:none"></div></div>`; }
+function renderSystemControls() { return `<div class="flex gap-4 justify-center mt-10"><button id="shutdown-btn" class="bg-red-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-red-700">SHUTDOWN</button><button id="restart-btn" class="bg-yellow-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-yellow-700">RESTART</button></div>`; }
+
+function showModal(title, msg, confirmFn, isInfo=false) {
+    const c = document.getElementById('modal-container');
+    c.querySelector('h3').textContent = title;
+    c.querySelector('p').textContent = msg;
+    const btn = c.querySelector('#modal-confirm-btn');
+    if(isInfo) { btn.textContent='Đóng'; c.querySelector('#modal-cancel-btn').classList.add('hidden'); }
+    else { btn.textContent='Xác Nhận'; c.querySelector('#modal-cancel-btn').classList.remove('hidden'); }
+    
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.onclick = () => { c.classList.add('hidden'); if(confirmFn) confirmFn(); };
+    c.classList.remove('hidden');
+    c.querySelector('#modal-cancel-btn').onclick = () => c.classList.add('hidden');
+}
+
+function switchView(view) {
+    currentView = view;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`button[data-view="${view}"]`).classList.add('active');
+    const area = document.getElementById('content-area');
+    
+    if(view === 'applications') { area.innerHTML = renderAppLayout(); document.getElementById('list-apps-btn').onclick = refreshCurrentViewData; document.getElementById('start-app-btn').onclick = () => sendCommand('app_start', {name: document.getElementById('app-start-name').value}); refreshCurrentViewData(); }
+    else if(view === 'processes') { area.innerHTML = renderProcessLayout(); document.getElementById('list-proc-btn').onclick = refreshCurrentViewData; document.getElementById('start-process-btn').onclick = () => sendCommand('process_start', {name: document.getElementById('process-start-path').value}); refreshCurrentViewData(); }
+    else if(view === 'screenshot') { area.innerHTML = renderScreenshotView(); document.getElementById('capture-btn').onclick = () => {screenshotPending=true; document.getElementById('screenshot-image').style.display='none'; document.getElementById('screenshot-placeholder').style.display='block'; sendCommand('screenshot');}; document.getElementById('save-screenshot-btn').onclick = () => { const link = document.createElement('a'); link.href = document.getElementById('screenshot-image').src; link.download = prompt("Tên file:", "screenshot.png") || "screenshot.png"; link.click(); }; }
+    else if(view === 'keylogger') { area.innerHTML = renderKeyloggerDisplay(); document.getElementById('start-key').onclick = () => sendCommand('keylogger_start'); document.getElementById('stop-key').onclick = () => sendCommand('keylogger_stop'); document.getElementById('clear-key').onclick = () => document.getElementById('keylogger-log').value = ''; }
+    else if(view === 'webcam') { area.innerHTML = renderWebcamControl(); document.getElementById('cam-on').onclick = () => {sendCommand('webcam_on'); document.getElementById('webcam-placeholder').innerHTML = '<div class="loader mb-2"></div> Đang kết nối...';}; document.getElementById('cam-off').onclick = () => sendCommand('webcam_off'); }
+    else if(view === 'system') { area.innerHTML = renderSystemControls(); document.getElementById('shutdown-btn').onclick = () => showModal("Cảnh báo", "Tắt máy?", () => sendCommand('shutdown')); document.getElementById('restart-btn').onclick = () => showModal("Cảnh báo", "Khởi động lại?", () => sendCommand('restart')); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {   
+    document.querySelectorAll('.tab-btn').forEach(b => b.onclick = () => switchView(b.dataset.view));
+    document.getElementById('login-form').onsubmit = (e) => {
+        e.preventDefault();
+        doLogin(document.getElementById('username-input').value, document.getElementById('password-input').value);
+    };
+    document.getElementById('logout-btn').onclick = doLogout;
+});
 
 // --- LOGIC SẮP XẾP TIẾN TRÌNH (TAM GIÁC) ---
 

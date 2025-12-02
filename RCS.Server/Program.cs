@@ -14,19 +14,18 @@ namespace RCS.Server
             var builder = WebApplication.CreateBuilder(args);
 
             // --- 1. Cấu hình SignalR ---
-            // Tăng giới hạn tin nhắn lên 10MB để nhận ảnh Screenshot/Webcam
+            // Tăng giới hạn tin nhắn lên 10MB để server có thể nhận ảnh (screenshot/webcam)
             builder.Services.AddSignalR(options => {
                 options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
             });
 
             // --- 2. Cấu hình CORS ---
-            // Cho phép Client HTML (Web Frontend) kết nối vào
+            // Cấu hình này cực kỳ quan trọng để Frontend (HTML) gọi được vào Server
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowClient", policy =>
                 {
-                    // Thay đổi cổng 5500 nếu Live Server của bạn chạy cổng khác
-                    // Cho phép cả localhost và 127.0.0.1 để tránh lỗi trình duyệt
+                    // Lưu ý: Nếu bạn chạy Frontend ở cổng khác, hãy thêm vào đây
                     policy.WithOrigins("http://localhost:5500", "http://127.0.0.1:5500")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
@@ -35,21 +34,28 @@ namespace RCS.Server
             });
 
             // --- 3. Đăng ký Services (Dependency Injection) ---
+            // ConnectionManager cần là Singleton để giữ danh sách Agent đang online trong bộ nhớ
             builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
             builder.Services.AddSingleton<AgentCommandService>();
+
+            // QUAN TRỌNG: Đăng ký dịch vụ lắng nghe UDP chạy ngầm (Hosted Service)
+            // Nếu thiếu dòng này, Server sẽ không mở cổng 6000 để nhận Video
+            builder.Services.AddHostedService<UdpListenerService>();
 
             // --- 4. Build App ---
             var app = builder.Build();
 
             // --- 5. Middleware Pipeline ---
             app.UseRouting();
+            
+            // Kích hoạt CORS
             app.UseCors("AllowClient");
 
             // Map các Hub SignalR
             app.MapHub<ClientHub>("/clienthub");
             app.MapHub<AgentHub>("/agenthub");
 
-            // Test endpoint để kiểm tra Server sống hay chết
+            // Endpoint kiểm tra server sống hay chết
             app.MapGet("/", () => "RCS Server is running...");
 
             // Chạy ứng dụng
