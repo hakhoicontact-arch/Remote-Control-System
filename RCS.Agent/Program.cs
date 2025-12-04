@@ -23,7 +23,7 @@ namespace RCS.Agent
         private static UdpClient _udpClient; 
         
         // --- CẤU HÌNH ---
-        private const string SERVER_UDP_HOST = "127.0.0.1"; 
+        private const string SERVER_UDP_HOST = "localhost"; 
         private const int SERVER_UDP_PORT = 6000;
         private const string AGENT_ID = "Agent_12345";
         private const string SERVER_URL = "http://localhost:5000/agenthub";
@@ -132,25 +132,35 @@ namespace RCS.Agent
         private static async Task SendFragmentedImage(byte[] imageBytes)
         {
             try 
-            {
+            {   
+                long timestamp = DateTime.UtcNow.Ticks; // Lấy thời gian hiện tại (Ticks: 100ns)
                 int totalLength = imageBytes.Length;
                 ushort totalPackets = (ushort)Math.Ceiling((double)totalLength / MAX_PACKET_SIZE);
                 int frameId = Interlocked.Increment(ref _frameSequence);
+
+                const int HEADER_SIZE = 20;
 
                 for (ushort i = 0; i < totalPackets; i++)
                 {
                     int offset = i * MAX_PACKET_SIZE;
                     int size = Math.Min(MAX_PACKET_SIZE, totalLength - offset);
-
-                    byte[] header = new byte[12];
+                    
+                    // --- TẠO HEADER (20 Bytes) ---
+                    // [0-3]: Frame ID
+                    // [4-5]: Packet Index
+                    // [6-7]: Total Packets
+                    // [8-11]: Payload Size
+                    // [12-19]: NEW: Timestamp (Ticks)
+                    byte[] header = new byte[HEADER_SIZE];
                     BitConverter.GetBytes(frameId).CopyTo(header, 0);
                     BitConverter.GetBytes(i).CopyTo(header, 4);
                     BitConverter.GetBytes(totalPackets).CopyTo(header, 6);
                     BitConverter.GetBytes(size).CopyTo(header, 8);
+                    BitConverter.GetBytes(timestamp).CopyTo(header, 12); 
 
-                    byte[] packet = new byte[12 + size];
-                    Array.Copy(header, 0, packet, 0, 12);
-                    Array.Copy(imageBytes, offset, packet, 12, size);
+                    byte[] packet = new byte[HEADER_SIZE + size];
+                    Array.Copy(header, 0, packet, 0, HEADER_SIZE);
+                    Array.Copy(imageBytes, offset, packet, HEADER_SIZE, size);
 
                     await _udpClient.SendAsync(packet, packet.Length, SERVER_UDP_HOST, SERVER_UDP_PORT);
                 }

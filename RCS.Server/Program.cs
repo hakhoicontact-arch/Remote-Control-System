@@ -19,13 +19,14 @@ namespace RCS.Server
                 options.MaximumReceiveMessageSize = ReceiveMessageSize_MB * 1024 * 1024;
             });
 
-            // --- 2. Cấu hình CORS ---
+            // --- 2.eyb Cấu hình CORS ---
             // Cấu hình này cực kỳ quan trọng để Frontend (HTML) gọi được vào Server
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowClient", policy =>
                 {
-                    // Lưu ý: Nếu bạn chạy Frontend ở cổng khác, hãy thêm vào đây
+                    // Lưu ý: Nếu chạy Frontend ở cổng khác, hãy thêm vào đây
+                    // policy.SetIsOriginAllowed(origin => true)
                     policy.WithOrigins("http://localhost:5500", "http://127.0.0.1:5500")
                           .AllowAnyHeader()
                           .AllowAnyMethod()

@@ -68,25 +68,32 @@ namespace RCS.Server.Services
 
         private void ProcessPacket(byte[] data)
         {
-            if (data.Length < 12) return; 
+            const int HEADER_SIZE = 20;
+            if (data.Length < HEADER_SIZE) return; 
 
+            // --- ĐỌC HEADER (20 Bytes đầu) ---
             int frameId = BitConverter.ToInt32(data, 0);
             ushort packetIndex = BitConverter.ToUInt16(data, 4);
             ushort totalPackets = BitConverter.ToUInt16(data, 6);
             int dataSize = BitConverter.ToInt32(data, 8);
+            long timestampTicks = BitConverter.ToInt64(data, 12);  // Lấy Timestamp (8 bytes)
 
-            if (data.Length != 12 + dataSize) return;
+            if (data.Length != HEADER_SIZE + dataSize) return;
 
             byte[] payload = new byte[dataSize];
-            Array.Copy(data, 12, payload, 0, dataSize);
+            Array.Copy(data, HEADER_SIZE, payload, 0, dataSize);
 
-            // Dùng GetOrAdd để an toàn luồng
-            var currentFrame = _frameBuffer.GetOrAdd(frameId, _ => new ReceivedFrame 
-            { 
-                TotalPackets = totalPackets, 
-                Timestamp = DateTime.Now 
-            });
-            
+            if (!_frameBuffer.ContainsKey(frameId))
+            {
+                _frameBuffer[frameId] = new ReceivedFrame { 
+                    TotalPackets = totalPackets, 
+                    Timestamp = DateTime.Now,
+                    SenderTicks = timestampTicks // LƯU TIMESTAMP GỐC
+                };
+            }
+
+            var currentFrame = _frameBuffer[frameId];
+             
             lock (currentFrame)
             {
                 if (!currentFrame.Packets.ContainsKey(packetIndex))
@@ -126,7 +133,7 @@ namespace RCS.Server.Services
                 }
 
                 string base64 = "data:image/jpeg;base64," + Convert.ToBase64String(fullImage);
-                await _hubContext.Clients.All.SendAsync("ReceiveBinaryChunk", base64);
+                await _hubContext.Clients.All.SendAsync("ReceiveBinaryChunk", base64, fullImage.Length, frame.SenderTicks);
             }
             catch (Exception ex)
             {
@@ -150,6 +157,7 @@ namespace RCS.Server.Services
         {
             public ushort TotalPackets { get; set; }
             public DateTime Timestamp { get; set; }
+            public long SenderTicks { get; set; }
             public Dictionary<ushort, byte[]> Packets { get; set; } = new();
         }
     }

