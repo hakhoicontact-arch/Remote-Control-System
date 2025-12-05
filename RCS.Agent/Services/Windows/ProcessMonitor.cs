@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------------
 // File: ProcessMonitor.cs
-// Description:
-//      Định nghĩa dịch vụ quản lý tiến trình trên Windows
-//
-//      Mục đích: Cung cấp các chức năng để liệt kê, khởi động và dừng các tiến trình trên hệ điều hành Windows.
+// Description: Định nghĩa dịch vụ quản lý tiến trình trên Windows
+// Mục đích: Cung cấp các chức năng liệt kê (kèm thông số CPU/RAM), khởi động 
+//           và dừng tiến trình.
 // -----------------------------------------------------------------------------
 
 using RCS.Common.Models;
@@ -17,59 +16,80 @@ namespace RCS.Agent.Services.Windows
 {
     public class ProcessMonitor
     {
+        #region --- MAIN FUNCTION: GET PROCESS LIST ---
+
+        /// <summary>
+        /// Lấy danh sách các tiến trình đang chạy, bao gồm tính toán % CPU và RAM.
+        /// Lưu ý: Hàm này sẽ mất khoảng 300ms để thực thi do cần lấy mẫu (sampling) CPU.
+        /// </summary>
         public List<ProcessInfo> GetProcesses()
         {
             var list = new List<ProcessInfo>();
-            
-            // 1. Lấy danh sách tiến trình hiện tại
+
+            // Lấy danh sách toàn bộ tiến trình hiện tại từ OS
             var processes = Process.GetProcesses();
+            
+            // Dictionary lưu thời gian sử dụng CPU của từng process tại thời điểm bắt đầu đo
             var startCpuUsage = new Dictionary<int, TimeSpan>();
+            
+            // --- BƯỚC 1: SNAPSHOT BAN ĐẦU ---
+            // Ghi nhận thời gian hiện tại và thời gian CPU đã dùng của mỗi tiến trình
             var startTime = DateTime.UtcNow;
 
-            // 2. Ghi lại thời gian CPU ban đầu của từng tiến trình
             foreach (var p in processes)
             {
                 try
                 {
-                    // Chỉ lấy được thông tin nếu có quyền truy cập
+                    // Chỉ lấy được thông tin nếu có quyền truy cập (Tránh lỗi Access Denied với process hệ thống)
                     startCpuUsage[p.Id] = p.TotalProcessorTime;
                 }
-                catch { }
+                catch 
+                { 
+                    // Bỏ qua nếu không truy cập được
+                }
             }
 
-            // 3. Tạm dừng 300ms để tạo khoảng chênh lệch (Sampling)
-            // Khoảng thời gian này đủ để Windows cập nhật tick CPU
+            // --- BƯỚC 2: SAMPLING (LẤY MẪU) ---
+            // Tạm dừng 300ms để tạo "khoảng chênh lệch". 
+            // CPU Usage là con số tức thời, ta cần đo (Work Done) / (Time Elapsed).
             Thread.Sleep(300);
 
+            // --- BƯỚC 3: TÍNH TOÁN ---
             var endTime = DateTime.UtcNow;
-            var totalSampleTime = (endTime - startTime).TotalMilliseconds;
-            var cpuCoreCount = Environment.ProcessorCount; // Số nhân CPU
+            var totalSampleTime = (endTime - startTime).TotalMilliseconds; // Tổng thời gian trôi qua thực tế
+            var cpuCoreCount = Environment.ProcessorCount; // Số nhân CPU (để chia tỉ lệ % tổng)
 
-            // 4. Tính toán lại và xuất danh sách
-            // Sắp xếp theo Memory để lấy top những process nặng nhất (tránh gửi hàng nghìn process rác)
-            var sortedProcesses = processes.OrderByDescending(p => p.WorkingSet64).Take(100).ToList();
+            // Lọc và sắp xếp: Chỉ lấy Top 100 tiến trình ngốn RAM nhất để tối ưu băng thông mạng khi gửi về Client
+            var sortedProcesses = processes
+                .OrderByDescending(p => p.WorkingSet64)
+                .Take(100)
+                .ToList();
 
             foreach (var p in sortedProcesses)
             {
                 try
                 {
                     string cpuText = "0%";
-                    
-                    // Nếu lúc nãy đã ghi được thời gian bắt đầu thì tính toán
+
+                    // Nếu tiến trình này đã tồn tại từ lúc bắt đầu đo (có trong Dictionary)
                     if (startCpuUsage.ContainsKey(p.Id))
                     {
                         var endCpuUsage = p.TotalProcessorTime;
+                        
+                        // Thời gian CPU tiến trình đã dùng trong khoảng 300ms vừa qua
                         var cpuUsedMs = (endCpuUsage - startCpuUsage[p.Id]).TotalMilliseconds;
-                        
-                        // Công thức: (CPU dùng / Tổng thời gian mẫu) / Số nhân * 100
+
+                        // Công thức tính % CPU:
+                        // (Thời gian CPU dùng / Tổng thời gian trôi qua) / Số nhân * 100
+                        // Chia cho cpuCoreCount vì TotalProcessorTime có thể lớn hơn thời gian thực (trên máy đa nhân)
                         double cpuPercent = (cpuUsedMs / totalSampleTime) / cpuCoreCount * 100;
-                        
-                        // Làm tròn hiển thị
-                        if (cpuPercent > 0) 
+
+                        // Làm tròn 1 chữ số thập phân cho đẹp
+                        if (cpuPercent > 0)
                             cpuText = cpuPercent.ToString("0.0") + "%";
                     }
 
-                    // Chuyển đổi bytes sang MB
+                    // Chuyển đổi RAM từ Bytes sang MB
                     double memMb = p.WorkingSet64 / 1024.0 / 1024.0;
 
                     list.Add(new ProcessInfo
@@ -77,39 +97,61 @@ namespace RCS.Agent.Services.Windows
                         Pid = p.Id,
                         Name = p.ProcessName,
                         Cpu = cpuText,
-                        Mem = $"{memMb:F0} MB" // Format không lấy số lẻ cho gọn
+                        Mem = $"{memMb:F0} MB" // F0: Không lấy số lẻ thập phân cho gọn
                     });
                 }
-                catch { } // Bỏ qua các process hệ thống không truy cập được
+                catch 
+                { 
+                    // Bỏ qua các process bị tắt giữa chừng hoặc không truy cập được
+                }
             }
 
             return list;
         }
 
+        #endregion
+
+        #region --- ACTIONS: START & KILL ---
+
+        /// <summary>
+        /// Khởi động một tiến trình mới từ đường dẫn.
+        /// </summary>
+        /// <param name="path">Đường dẫn file .exe</param>
         public void StartProcess(string path)
         {
-             try 
-             { 
-                 Process.Start(new ProcessStartInfo
-                 {
-                     FileName = path,
-                     UseShellExecute = true
-                 });
-             } 
-             catch { }
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true // Quan trọng: Cho phép chạy file như khi click đúp trong Explorer
+                });
+            }
+            catch 
+            { 
+                // Xử lý lỗi im lặng (hoặc có thể log lại nếu cần)
+            }
         }
 
+        /// <summary>
+        /// Buộc dừng một tiến trình dựa trên ID (PID).
+        /// </summary>
+        /// <param name="pid">Process ID</param>
         public void KillProcess(int pid)
         {
             try
             {
+                // Lấy đối tượng process và gọi lệnh Kill
                 var p = Process.GetProcessById(pid);
                 p.Kill();
             }
-            catch (Exception ex) 
-            { 
+            catch (Exception ex)
+            {
+                // Log lỗi ra Console để debug nếu không kill được (ví dụ: quyền Admin, process đã tắt...)
                 Console.WriteLine($"[ProcessMonitor] Error killing {pid}: {ex.Message}");
             }
         }
+
+        #endregion
     }
 }
