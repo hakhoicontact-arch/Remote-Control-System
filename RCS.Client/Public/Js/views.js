@@ -151,13 +151,13 @@ export function renderScreenshotView() {
             <button id="capture-screenshot-btn" class="btn-primary bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition-all font-semibold">
                 <i class="fas fa-camera mr-2"></i> Chụp Màn Hình
             </button>
+            <button id="save-screenshot-btn" class="hidden btn-primary bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition-all font-semibold">
+                <i class="fas fa-download mr-2"></i> Lưu Ảnh
+            </button>
             <div id="screenshot-area" class="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center min-h-[300px]">
                 <p id="screenshot-placeholder" class="text-gray-500 mb-4">Chưa có ảnh</p>
                 <img id="screenshot-image" src="" alt="Screenshot" class="hidden max-w-full shadow-lg border border-gray-200 rounded-lg">
             </div>
-            <button id="save-screenshot-btn" class="hidden btn-primary bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition-all font-semibold">
-                <i class="fas fa-download mr-2"></i> Lưu Ảnh
-            </button>
         </div>
     `;
 }
@@ -178,19 +178,49 @@ export function renderKeyloggerDisplay() {
 
 export function renderWebcamControl() {
     return `
-        <div class="space-y-4">
-            <p class="text-lg font-semibold text-red-600 bg-red-100 p-3 rounded-lg shadow"><i class="fas fa-exclamation-triangle mr-2"></i> CẢNH BÁO: Truy cập Webcam Agent.</p>
-            <div class="flex justify-between items-center">
-                <div class="flex space-x-3">
-                    <button id="webcam-on-btn" class="btn-primary bg-green-600 text-white px-6 py-3 rounded-lg shadow font-semibold"><i class="fas fa-video mr-2"></i> Bật Webcam</button>
-                    <button id="webcam-off-btn" class="btn-primary bg-red-600 text-white px-6 py-3 rounded-lg shadow font-semibold"><i class="fas fa-stop mr-2"></i> Tắt Webcam</button>
+        <div class="space-y-4 h-full flex flex-col items-center"> <!-- Thêm items-center để căn giữa toàn bộ -->
+            
+            <!-- Thanh điều khiển (Giữ nguyên) -->
+            <div class="w-full max-w-5xl flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex items-center gap-2">
+                    <span class="text-red-500 animate-pulse"><i class="fas fa-circle text-[10px]"></i></span>
+                    <span class="font-bold text-gray-700">WEBCAM STREAM</span>
                 </div>
-                <button id="toggle-stats-btn" class="text-slate-600 bg-slate-100 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"><i class="fas fa-cogs mr-1"></i> Stats for Nerds</button>
+                
+                <div class="flex space-x-2">
+                    <button id="webcam-on-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center shadow-md shadow-green-200">
+                        <i class="fas fa-power-off mr-2"></i> Bật
+                    </button>
+                    <button id="webcam-off-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center shadow-md shadow-red-200">
+                        <i class="fas fa-stop mr-2"></i> Tắt
+                    </button>
+                    <button id="toggle-stats-btn">
+                        <i class="fas fa-chart-bar mr-1"></i> Stats
+                    </button>
+                </div>
             </div>
-            <div id="webcam-area" class="bg-gray-900 border-2 border-gray-700 rounded-lg p-2 text-center overflow-hidden min-h-[300px] relative flex items-center justify-center">
-                <div id="webcam-stats-overlay" class="absolute top-3 left-3 bg-black/50 p-2 rounded-lg pointer-events-none" style="display: block;"><p class="text-white bg-red-600 text-xs px-2 py-1 rounded font-bold uppercase tracking-widest">LIVE</p></div>
-                <div id="webcam-placeholder" class="text-gray-500 flex flex-col items-center"><i class="fas fa-video-slash fa-2x mb-2 text-slate-600"></i><span>Camera Off</span></div>
-                <img id="webcam-stream" src="" alt="Webcam" class="w-full h-auto block" style="display:none" />
+            
+            <!-- SỬA LỖI HIỂN THỊ TẠI ĐÂY -->
+            <!-- 1. max-w-5xl: Giới hạn chiều rộng tối đa (nhỏ lại, không tràn viền) -->
+            <!-- 2. aspect-video: Ép khung hình về tỉ lệ 16:9 chuẩn youtube -->
+            <!-- 3. w-full: Chiếm hết chiều rộng cho phép -->
+            <div id="webcam-area" class="w-full max-w-5xl aspect-video bg-black rounded-xl border-4 border-gray-800 relative flex items-center justify-center overflow-hidden shadow-2xl">
+                
+                <!-- OVERLAY THỐNG KÊ -->
+                <div id="webcam-stats-overlay" class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm p-3 rounded-lg pointer-events-none border border-white/10 shadow-lg z-10" style="display: none;">
+                    <!-- Nội dung JS điền vào -->
+                </div>
+                
+                <div id="webcam-placeholder" class="text-gray-500 flex flex-col items-center z-0">
+                    <div class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-video-slash fa-3x text-gray-600"></i>
+                    </div>
+                    <span class="text-lg font-medium">Camera Offline</span>
+                    <span class="text-sm text-gray-600">Nhấn "Bật" để bắt đầu stream</span>
+                </div>
+                
+                <!-- SỬA: Thêm class 'object-contain' để giữ đúng tỉ lệ hình ảnh, không bị méo -->
+                <img id="webcam-stream" src="" alt="Video Webcam Agent" class="w-full h-full object-contain absolute inset-0 z-1" style="display:none" />
             </div>
         </div>
     `;
@@ -210,3 +240,4 @@ export function renderSystemControls() {
         </div>
     `;
 }
+

@@ -107,7 +107,7 @@ namespace RCS.Agent.Services.Windows
             try
             {
                 // 1. Mở Camera index 0 (Camera mặc định)
-                _capture = new VideoCapture(0);
+                _capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
 
                 // 2. Cấu hình các thông số cho Camera
                 _capture.Set(VideoCaptureProperties.FrameWidth, FRAME_WIDTH);
@@ -150,7 +150,7 @@ namespace RCS.Agent.Services.Windows
                     {
                         // 2. Cấu hình nén ảnh JPEG
                         // - JpegQuality = 80: Cân bằng tốt giữa chất lượng và dung lượng (phù hợp stream qua mạng)
-                        var encodeParams = new int[] { (int)ImwriteFlags.JpegQuality, 80 };
+                        var encodeParams = new int[] { (int)ImwriteFlags.JpegQuality, 65 };
                         
                         // 3. Encode (nén) matrix thành mảng byte .jpg
                         Cv2.ImEncode(".jpg", frame, out byte[] buf, encodeParams);
