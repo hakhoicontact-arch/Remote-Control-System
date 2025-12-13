@@ -99,6 +99,7 @@ export function renderProcessLayout() {
         <div class="space-y-6">
              <!-- 1. HEADER THỐNG KÊ (DASHBOARD STYLE) -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+
                 <!-- CPU Card -->
                 <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm transition-transform hover:scale-[1.02]">
                     <div class="flex justify-between items-start">
@@ -173,97 +174,6 @@ export function renderProcessLayout() {
                     </div>
                 </div>
             </div>
-
-
-
-
-
-            <!-- SYSTEM INFO BOARD (Bảng thông tin chi tiết) -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
-                    <i class="fas fa-desktop text-blue-600"></i>
-                    <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">System Specification</h3>
-                    <span id="spec-uptime" class="ml-auto text-xs font-mono text-green-600 bg-green-50 px-2 py-1 rounded">Uptime: ...</span>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
-                    <!-- CPU -->
-                    <div class="space-y-1">
-                        <p class="text-xs text-slate-400 font-bold uppercase">Processor (CPU)</p>
-                        <div class="flex items-start gap-2">
-                            <i class="fab fa-intel text-blue-400 mt-1"></i> <!-- Icon minh họa -->
-                            <div>
-                                <p id="spec-cpu-name" class="font-semibold text-slate-800">Loading...</p>
-                                <p id="spec-cpu-cores" class="text-xs text-slate-500 font-mono">-</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- RAM -->
-                    <div class="space-y-1">
-                        <p class="text-xs text-slate-400 font-bold uppercase">Memory (RAM)</p>
-                        <div class="flex items-start gap-2">
-                            <i class="fas fa-memory text-purple-400 mt-1"></i>
-                            <div>
-                                <p id="spec-ram-total" class="font-semibold text-slate-800">Loading...</p>
-                                <p id="spec-ram-detail" class="text-xs text-slate-500 font-mono">-</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- GPU -->
-                    <div class="space-y-1">
-                        <p class="text-xs text-slate-400 font-bold uppercase">Graphics (GPU)</p>
-                        <div class="flex items-start gap-2">
-                            <i class="fas fa-tv text-green-400 mt-1"></i>
-                            <div>
-                                <p id="spec-gpu" class="font-semibold text-slate-800">Loading...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- NETWORK & OS -->
-                    <div class="space-y-1">
-                        <p class="text-xs text-slate-400 font-bold uppercase">System & Network</p>
-                        <div class="flex items-start gap-2">
-                            <i class="fab fa-windows text-blue-400 mt-1"></i>
-                            <div>
-                                <p id="spec-os" class="font-semibold text-slate-800 text-xs">Loading...</p>
-                                <p id="spec-ip" class="text-xs text-slate-500 font-mono mt-0.5">IP: -</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- DISK BAR -->
-                <div class="mt-4 pt-3 border-t border-slate-100">
-                    <p class="text-xs text-slate-400 font-bold uppercase mb-2">Storage</p>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-hdd text-orange-400"></i>
-                        <p id="spec-disk" class="text-xs font-mono text-slate-600 flex-grow">Loading drives...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. RESOURCE MONITOR (Thanh phần trăm Realtime) -->
-            <div class="grid grid-cols-3 gap-4">
-                 <!-- Giữ nguyên phần CPU/RAM/Disk Card cũ của bạn ở đây để hiển thị % realtime -->
-                 <!-- (Tôi không paste lại để tiết kiệm dòng, bạn dùng lại đoạn HTML cũ nhé) -->
-                 <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-xs font-bold text-blue-600">CPU Load</span>
-                        <span id="total-cpu" class="text-xs font-bold text-blue-700">0%</span>
-                    </div>
-                    <div class="w-full bg-blue-200 h-1.5 rounded-full overflow-hidden">
-                        <div id="bar-cpu" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                </div>
-                <!-- ... RAM & Disk cards ... -->
-            </div>
-
-
-
-
 
             <!-- 2. TOOLBAR -->
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -521,35 +431,112 @@ export function renderWebcamControl() {
 
 export function renderSystemControls() {
     return `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-10">
-            <div class="p-6 bg-red-50 rounded-lg shadow-lg border-l-4 border-red-500">
-                <h3 class="text-xl font-bold text-red-800 mb-3">Tắt Nguồn</h3>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
+                <i class="fas fa-desktop text-blue-600"></i>
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">System Specification</h3>
+                <span id="spec-uptime" class="ml-auto text-xs font-mono text-green-600 bg-green-50 px-2 py-1 rounded">Uptime: ...</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+                <div class="space-y-1">
+                    <p class="text-xs text-slate-400 font-bold uppercase">Processor (CPU)</p>
+                    <div class="flex items-start gap-2">
+                        <i class="fab fa-intel text-blue-400 mt-1"></i>
+                        <div>
+                            <p id="spec-cpu-name" class="font-semibold text-slate-800">Loading...</p>
+                            <p id="spec-cpu-cores" class="text-xs text-slate-500 font-mono">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <p class="text-xs text-slate-400 font-bold uppercase">Memory (RAM)</p>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-memory text-purple-400 mt-1"></i>
+                        <div>
+                            <p id="spec-ram-total" class="font-semibold text-slate-800">Loading...</p>
+                            <p id="spec-ram-detail" class="text-xs text-slate-500 font-mono">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <p class="text-xs text-slate-400 font-bold uppercase">Graphics (GPU)</p>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-tv text-green-400 mt-1"></i>
+                        <div>
+                            <p id="spec-gpu" class="font-semibold text-slate-800">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <p class="text-xs text-slate-400 font-bold uppercase">System & Network</p>
+                    <div class="flex items-start gap-2">
+                        <i class="fab fa-windows text-blue-400 mt-1"></i>
+                        <div>
+                            <p id="spec-os" class="font-semibold text-slate-800 text-xs">Loading...</p>
+                            <p id="spec-ip" class="text-xs text-slate-500 font-mono mt-0.5">IP: -</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100">
+                <p class="text-xs text-slate-400 font-bold uppercase mb-2">Storage</p>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-hdd text-orange-400"></i>
+                    <p id="spec-disk" class="text-xs font-mono text-slate-600 flex-grow">Loading drives...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+            
+            <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200 text-center transform hover:scale-[1.02] transition-transform duration-300">
+                <div class="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-red-100">
+                    <i class="fas fa-power-off text-2xl"></i>
+                </div>
                 
-                <button id="shutdown-btn" class="flip-btn w-full h-12 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow">
+                <h3 class="text-lg font-bold text-slate-800 mb-1">Tắt Nguồn</h3>
+                <p class="text-slate-500 mb-5 text-xs">Tắt máy trạm ngay lập tức.</p>
+                
+                <button id="shutdown-btn" class="flip-btn w-full h-11 bg-red-600 text-white rounded-lg font-bold shadow-md shadow-red-200 hover:bg-red-700 transition-all active:scale-95 text-sm">
                     <div class="flip-content-front">
                         <span>SHUTDOWN</span>
                     </div>
-                    <div class="flip-content-back">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <span class="ml-2 font-bold">BYE!</span>
+                    <div class="flip-content-back bg-red-700 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <span class="ml-2">BYE!</span>
                     </div>
                 </button>
             </div>
 
-            <div class="p-6 bg-yellow-50 rounded-lg shadow-lg border-l-4 border-yellow-500">
-                <h3 class="text-xl font-bold text-yellow-800 mb-3">Khởi Động Lại</h3>
+            <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200 text-center transform hover:scale-[1.02] transition-transform duration-300">
+                <div class="w-14 h-14 bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-yellow-100">
+                    <i class="fas fa-redo-alt text-2xl"></i>
+                </div>
                 
-                <button id="restart-btn" class="flip-btn w-full h-12 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg shadow">
+                <h3 class="text-lg font-bold text-slate-800 mb-1">Khởi Động Lại</h3>
+                <p class="text-slate-500 mb-5 text-xs">Khởi động lại máy trạm.</p>
+                
+                <button id="restart-btn" class="flip-btn w-full h-11 bg-yellow-500 text-white rounded-lg font-bold shadow-md shadow-yellow-200 hover:bg-yellow-600 transition-all active:scale-95 text-sm">
                     <div class="flip-content-front">
                         <span>RESTART</span>
                     </div>
-                    <div class="flip-content-back">
-                        <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        <span class="ml-2 font-bold">LOADING...</span>
+                    <div class="flip-content-back bg-yellow-600 rounded-lg">
+                        <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span class="ml-2">LOADING...</span>
                     </div>
                 </button>
             </div>
         </div>
+        
     `;
 }
 

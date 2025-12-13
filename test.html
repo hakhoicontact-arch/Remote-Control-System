@@ -1,0 +1,234 @@
+<!-- CPU Card -->
+                <div class="flip-card-container" onclick="this.classList.toggle('flipped')">
+                    
+                    <!-- CPU Card Trước-->
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-blue-500 font-bold uppercase tracking-wider">CPU Usage</p>
+                                    <i class="fas fa-microchip text-blue-200 text-lg"></i>
+                                </div>
+                                <p id="total-cpu" class="text-xl font-mono font-bold text-slate-700 mt-1">0%</p>
+                                <div class="w-full bg-blue-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                                    <div id="bar-cpu" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i>Mức độ sử dụng
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-undo mr-1"></i>Nhấn để xem thông tin CPU
+                                </p>
+                            </div>
+                        </div>
+
+                        
+                        <!-- CPU Card Sau -->
+                        <div class="flip-card-back">
+                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-blue-500 font-bold uppercase tracking-wider">Processor (CPU)</p>
+                                    <i class="fas fa-microchip text-blue-200 text-lg"></i>
+                                </div>
+                                <p id="spec-cpu-name" class="font-semibold text-slate-800">Loading...</p>
+                                <p id="spec-cpu-cores" class="text-xs text-slate-500 font-mono">-</p>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i>Nhấn để quay lại
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- RAM Card -->
+                <div class="flip-card-container" onclick="this.classList.toggle('flipped')">
+                    
+                    <!-- RAM Card Trước-->
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-purple-500 font-bold uppercase tracking-wider">Memory</p>
+                                    <i class="fas fa-memory text-purple-200 text-lg"></i>
+                                </div>
+                                <p id="total-mem" class="text-xl font-mono font-bold text-slate-700 mt-1">0 MB</p>
+                                <div class="w-full bg-purple-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                                    <div id="bar-mem" class="bg-purple-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-server mr-1"></i>Đang chiếm dụng
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-undo mr-1"></i>Nhấn để xem thông tin RAM
+                                </p>
+                            </div>
+                        </div>
+
+                        
+                        <!-- RAM Card Sau -->
+                        <div class="flip-card-back">
+                            <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-purple-500 font-bold uppercase tracking-wider">Memory (RAM)</p>
+                                    <i class="fas fa-memory text-purple-200 text-lg"></i>
+                                </div>
+                                <p id="spec-ram-total" class="font-semibold text-slate-800">Loading...</p>
+                                <p id="spec-ram-detail" class="text-xs text-slate-500 font-mono">-</p>
+                                <p id="spec-gpu" class="font-semibold text-slate-800">Loading...</p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-undo mr-1"></i>Nhấn để quay trở lại
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DISK Card -->
+                <div class="flip-card-container" onclick="this.classList.toggle('flipped')">
+                    
+                    <!-- DISK Card Trước-->
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-orange-500 font-bold uppercase tracking-wider">Disk I/O</p>
+                                    <i class="fas fa-hdd text-orange-200 text-lg"></i>
+                                </div>
+                                <p id="total-disk" class="text-xl font-mono font-bold text-slate-700 mt-1">0 KB/s</p>
+                                <div class="w-full bg-orange-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                                    <div id="bar-disk" class="bg-orange-400 h-full rounded-full w-0 transition-all duration-500 opacity-50"></div>
+                                </div>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-exchange-alt mr-1"></i>Tốc độ Đọc/Ghi
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-undo mr-1"></i>Nhấn để xem thông tin DISK
+                                </p>
+                            </div>
+                        </div>
+
+                        
+                        <!-- DISK Card Sau -->
+                        <div class="flip-card-back">
+                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-blue-500 font-bold uppercase tracking-wider">Processor (CPU)</p>
+                                    <i class="fas fa-microchip text-blue-200 text-lg"></i>
+                                </div>
+                                <p id="spec-cpu-name" class="font-semibold text-slate-800">Loading...</p>
+                                <p id="spec-cpu-cores" class="text-xs text-slate-500 font-mono">-</p>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i>Nhấn để quay lại
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Process count Card -->
+                <div class="flip-card-container" onclick="this.classList.toggle('flipped')">
+                    
+                    <!-- Process count Card Trước-->
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Processes</p>
+                                    <i class="fas fa-tasks text-slate-300 text-lg"></i>
+                                </div>
+                                <p id="total-count" class="text-xl font-mono font-bold text-slate-700 mt-1">0</p>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-list-ul mr-1"></i>Tiến trình chạy
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-undo mr-1"></i>Nhấn để xem thông tin 
+                                </p>
+                            </div>
+                        </div>
+
+                        
+                        <!-- Process count Card Sau -->
+                        <div class="flip-card-back">
+                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 height=100% shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-blue-500 font-bold uppercase tracking-wider">Processor (CPU)</p>
+                                    <i class="fas fa-microchip text-blue-200 text-lg"></i>
+                                </div>
+                                <p id="spec-cpu-name" class="font-semibold text-slate-800">Loading...</p>
+                                <p id="spec-cpu-cores" class="text-xs text-slate-500 font-mono">-</p>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i>Nhấn để quay lại
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CPU Card -->
+                <div class="flip-card-container" onclick="this.classList.toggle('flipped')">
+                    
+                    <!-- CPU Card Trước-->
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm hidden md:block">
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">System Info</p>
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-[10px] text-slate-400 font-medium">Threads</span>
+                                    <span id="total-threads" class="font-mono font-bold text-slate-600 text-sm">0</span>
+                                </div>
+                                <div class="flex justify-between items-end">
+                                    <span class="text-[10px] text-slate-400 font-medium">Handles</span>
+                                    <span id="total-handles" class="font-mono font-bold text-slate-600 text-sm">0</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-undo mr-1"></i>Nhấn để xem thông tin CPU
+                                </p>
+                            </div>
+                        </div>
+
+                        
+                        <!-- CPU Card Sau -->
+                        <div class="flip-card-back">
+                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm transition-transform hover:scale-[1.02]">
+                                <div class="flex justify-between items-start">
+                                    <p class="text-xs text-blue-500 font-bold uppercase tracking-wider">Processor (CPU)</p>
+                                    <i class="fas fa-microchip text-blue-200 text-lg"></i>
+                                </div>
+                                <p id="spec-cpu-name" class="font-semibold text-slate-800">Loading...</p>
+                                <p id="spec-cpu-cores" class="text-xs text-slate-500 font-mono">-</p>
+                                <!-- Dòng chú thích nhỏ -->
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i>Nhấn để quay lại
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

