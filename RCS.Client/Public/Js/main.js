@@ -33,6 +33,9 @@ function handleResponse(data) {
             sendCommand('app_list');
             setTimeout(() => {
                 sendCommand('app_list');
+            }, 100);
+            setTimeout(() => {
+                sendCommand('app_list');
             }, 1000);
         }
         
@@ -266,11 +269,44 @@ function attachViewListeners(view) {
             sendCommand('app_list');
         };
         const btnStart = document.getElementById('start-app-btn');
-        if(btnStart) btnStart.onclick = () => {
-            const name = document.getElementById('app-start-name').value;
-            if(name) sendCommand('app_start', { name });
-        };
-        
+        const inputStart = document.getElementById('app-search name');
+        if(btnStart && inputStart) {
+            // Hàm xử lý gửi lệnh mở
+            const handleStartApp = () => {
+                const name = inputStart.value.trim();
+                if (!name) {
+                    alert("Vui lòng nhập tên ứng dụng (vd: chrome) hoặc đường dẫn!");
+                    return;
+                }
+
+                // 1. Hiệu ứng Loading
+                const originalContent = btnStart.innerHTML;
+                btnStart.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btnStart.disabled = true;
+
+                // 2. Gửi lệnh
+                sendCommand('app_start', { name });
+
+                // 3. Reset giao diện sau 1s (để người dùng biết đã bấm)
+                setTimeout(() => {
+                    btnStart.innerHTML = originalContent;
+                    btnStart.disabled = false;
+                    inputStart.value = ''; // Xóa ô nhập
+                    
+                    // Tự động làm mới danh sách sau 1.5s để thấy app chuyển trạng thái Running
+                    setTimeout(() => sendCommand('app_list'), 1500);
+                }, 1000);
+            };
+
+            // Sự kiện Click chuột
+            btnStart.onclick = handleStartApp;
+
+            // Sự kiện nhấn phím Enter trong ô input
+            inputStart.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleStartApp();
+            });
+        }
+
         const tableBody = document.getElementById('app-list-body');
         if(tableBody) tableBody.addEventListener('click', (e) => {
             const stopBtn = e.target.closest('button[data-action="stop-app"]');
@@ -283,8 +319,16 @@ function attachViewListeners(view) {
                 });
             }
             if (startBtn) {
+                // 1. Hiển thị loading để người dùng biết đang xử lý
                 startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                // 2. Gửi lệnh mở ứng dụng
+                // data-id của nút Start chứa đường dẫn hoặc tên ứng dụng cần mở
                 sendCommand('app_start', { name: startBtn.dataset.id });
+
+                // 3. Tự động làm mới danh sách sau 1.5s để cập nhật trạng thái "Running"
+                // (Cần delay để ứng dụng kịp khởi động và xuất hiện trong danh sách process)
+                setTimeout(() => sendCommand('app_list'), 1500);
             }
         });
         const searchInput = document.getElementById('app-search');
@@ -363,33 +407,33 @@ function attachViewListeners(view) {
     }
     else if (view === 'webcam') {
         document.getElementById('webcam-on-btn').onclick = () => {
-        // Bật cờ streaming
-        state.webcam.isStreaming = true;
-        sendCommand('webcam_on');
-        
-        const ph = document.getElementById('webcam-placeholder');
-        if (ph) {
-            // Chèn HTML loader mới với class đã đổi tên
-            ph.innerHTML = `
-                <div class="wc-load-wrapper">
-                    <div class="wc-load-circle"></div>
-                    <div class="wc-load-circle"></div>
-                    <div class="wc-load-circle"></div>
-                    <div class="wc-load-shadow"></div>
-                    <div class="wc-load-shadow"></div>
-                    <div class="wc-load-shadow"></div>
-                </div>
-                <div class="text-center mt-4 text-white">Đang kết nối...</div>
-            `;
+            // Bật cờ streaming
+            state.webcam.isStreaming = true;
+            sendCommand('webcam_on');
             
-            // Đảm bảo container cha có Flexbox để căn giữa loader (nếu chưa có trong CSS gốc)
-            ph.style.display = 'flex';
-            ph.style.flexDirection = 'column';
-            ph.style.justifyContent = 'center';
-            ph.style.alignItems = 'center';
-        }
-        updateWebcamStatsDisplay();
-    };
+            const ph = document.getElementById('webcam-placeholder');
+            if (ph) {
+                // Chèn HTML loader mới với class đã đổi tên
+                ph.innerHTML = `
+                    <div class="wc-load-wrapper">
+                        <div class="wc-load-circle"></div>
+                        <div class="wc-load-circle"></div>
+                        <div class="wc-load-circle"></div>
+                        <div class="wc-load-shadow"></div>
+                        <div class="wc-load-shadow"></div>
+                        <div class="wc-load-shadow"></div>
+                    </div>
+                    <div class="text-center mt-4 text-white">Đang kết nối...</div>
+                `;
+                
+                // Đảm bảo container cha có Flexbox để căn giữa loader (nếu chưa có trong CSS gốc)
+                ph.style.display = 'flex';
+                ph.style.flexDirection = 'column';
+                ph.style.justifyContent = 'center';
+                ph.style.alignItems = 'center';
+            }
+            updateWebcamStatsDisplay();
+        };
         document.getElementById('webcam-off-btn').onclick = () => sendCommand('webcam_off');
         document.getElementById('toggle-stats-btn').onclick = () => {
             state.webcam.isStatsVisible = !state.webcam.isStatsVisible;
@@ -397,6 +441,18 @@ function attachViewListeners(view) {
             btn.classList.toggle('bg-blue-600', state.webcam.isStatsVisible);
             btn.classList.toggle('text-white', state.webcam.isStatsVisible);
             updateWebcamStatsDisplay();
+        };
+
+        // GẮN SỰ KIỆN NÚT GHI HÌNH
+        document.getElementById('record-btn').onclick = toggleRecording;
+
+        // Xử lý khi tắt Webcam thì cũng phải tắt ghi hình luôn (nếu đang ghi)
+        document.getElementById('webcam-off-btn').onclick = () => {
+            if (state.webcam.isRecording) {
+                toggleRecording(); // Dừng ghi và hiện bảng lưu
+            }
+            state.webcam.isStreaming = false;
+            sendCommand('webcam_off');
         };
     }
     else if (view === 'system') {
@@ -499,6 +555,151 @@ document.addEventListener('DOMContentLoaded', () => {
         if(ipField) ipField.value = savedIp;
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function toggleRecording() {
+    const btn = document.getElementById('record-btn');
+    const timerUI = document.getElementById('recording-ui');
+    const img = document.getElementById('webcam-stream');
+    const canvas = document.getElementById('hidden-recorder-canvas');
+
+    if (!state.webcam.isRecording) {
+        // --- BẮT ĐẦU GHI ---
+        if (!state.webcam.isStreaming || img.style.display === 'none') {
+            alert("Vui lòng bật Webcam trước khi ghi hình!");
+            return;
+        }
+
+        // 1. Chuẩn bị Canvas
+        canvas.width = img.naturalWidth || 1280;
+        canvas.height = img.naturalHeight || 720;
+        const ctx = canvas.getContext('2d');
+
+        // 2. Tạo luồng stream từ Canvas (30 FPS)
+        const stream = canvas.captureStream(30);
+        state.webcam.recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        state.webcam.recordedChunks = [];
+
+        state.webcam.recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) state.webcam.recordedChunks.push(e.data);
+        };
+
+        state.webcam.recorder.onstop = () => {
+            showSaveVideoModal();
+        };
+
+        // 3. Vòng lặp vẽ ảnh từ <img> sang <canvas>
+        // Đây là bước quan trọng để biến ảnh tĩnh thành video stream
+        state.webcam.canvasDrawerInterval = setInterval(() => {
+            if (img.complete && img.naturalHeight !== 0) {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
+        }, 1000 / 30); // Vẽ 30 lần/giây
+
+        // 4. Bắt đầu ghi
+        state.webcam.recorder.start();
+        state.webcam.isRecording = true;
+        state.webcam.recordStartTime = Date.now();
+
+        // 5. UI Updates
+        btn.innerHTML = '<i class="fas fa-stop mr-2 text-red-600"></i> Dừng lại';
+        btn.classList.add('bg-red-50', 'text-red-600', 'border-red-200');
+        timerUI.classList.remove('hidden');
+
+        // 6. Chạy đồng hồ đếm giờ
+        state.webcam.recordTimerInterval = setInterval(updateRecordTimer, 1000);
+
+    } else {
+        // --- DỪNG GHI ---
+        stopRecordingProcess();
+        
+        // UI Updates
+        btn.innerHTML = '<i class="fas fa-record-vinyl mr-2 text-red-500"></i> Ghi hình';
+        btn.classList.remove('bg-red-50', 'text-red-600', 'border-red-200');
+        timerUI.classList.add('hidden');
+    }
+}
+
+function stopRecordingProcess() {
+    if (state.webcam.recorder && state.webcam.recorder.state !== 'inactive') {
+        state.webcam.recorder.stop();
+    }
+    state.webcam.isRecording = false;
+    clearInterval(state.webcam.recordTimerInterval);
+    clearInterval(state.webcam.canvasDrawerInterval);
+    document.getElementById('record-timer').textContent = "00:00";
+}
+
+function updateRecordTimer() {
+    const elapsed = Math.floor((Date.now() - state.webcam.recordStartTime) / 1000);
+    const min = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const sec = String(elapsed % 60).padStart(2, '0');
+    const timerEl = document.getElementById('record-timer');
+    if(timerEl) timerEl.textContent = `${min}:${sec}`;
+}
+
+// --- LOGIC LƯU VIDEO (MODAL) ---
+
+function showSaveVideoModal() {
+    const modal = document.getElementById('save-video-modal');
+    const nameInput = document.getElementById('video-filename');
+    
+    // Đặt tên mặc định theo ngày giờ
+    const now = new Date();
+    const defaultName = `RCS_Rec_${now.getHours()}${now.getMinutes()}_${now.getDate()}${now.getMonth()+1}`;
+    nameInput.value = defaultName;
+    
+    modal.classList.remove('hidden');
+
+    // Xử lý nút Lưu
+    document.getElementById('confirm-save-video').onclick = () => {
+        let filename = nameInput.value.trim() || defaultName;
+        if (!filename.endsWith('.webm')) filename += '.webm';
+        
+        const blob = new Blob(state.webcam.recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        modal.classList.add('hidden');
+        state.webcam.recordedChunks = []; // Dọn dẹp
+    };
+
+    // Xử lý nút Hủy
+    document.getElementById('cancel-save-video').onclick = () => {
+        modal.classList.add('hidden');
+        state.webcam.recordedChunks = []; // Hủy bỏ video vừa quay
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function enableAutoResize(inputId) {
     const input = document.getElementById(inputId);

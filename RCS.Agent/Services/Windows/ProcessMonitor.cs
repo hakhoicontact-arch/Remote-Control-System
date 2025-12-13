@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace RCS.Agent.Services.Windows
 {
@@ -18,92 +19,136 @@ namespace RCS.Agent.Services.Windows
     {
         #region --- MAIN FUNCTION: GET PROCESS LIST ---
 
-        /// <summary>
-        /// Lấy danh sách các tiến trình đang chạy, bao gồm tính toán % CPU và RAM.
-        /// Lưu ý: Hàm này sẽ mất khoảng 300ms để thực thi do cần lấy mẫu (sampling) CPU.
-        /// </summary>
+        // --- 1. ĐỊNH NGHĨA API WINDOWS ĐỂ LẤY DISK I/O ---
+        [DllImport("kernel32.dll")]
+        private static extern bool GetProcessIoCounters(IntPtr hProcess, out IO_COUNTERS lpIoCounters);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct IO_COUNTERS
+        {
+            public ulong ReadOperationCount;
+            public ulong WriteOperationCount;
+            public ulong OtherOperationCount;
+            public ulong ReadTransferCount;  // Bytes đọc
+            public ulong WriteTransferCount; // Bytes ghi
+            public ulong OtherTransferCount;
+        }
+
+        // --- 2. LOGIC LẤY DANH SÁCH ---
         public List<ProcessInfo> GetProcesses()
         {
             var list = new List<ProcessInfo>();
-
-            // Lấy danh sách toàn bộ tiến trình hiện tại từ OS
             var processes = Process.GetProcesses();
             
-            // Dictionary lưu thời gian sử dụng CPU của từng process tại thời điểm bắt đầu đo
+            // Lưu trạng thái ban đầu
             var startCpuUsage = new Dictionary<int, TimeSpan>();
-            
-            // --- BƯỚC 1: SNAPSHOT BAN ĐẦU ---
-            // Ghi nhận thời gian hiện tại và thời gian CPU đã dùng của mỗi tiến trình
+            var startDiskUsage = new Dictionary<int, ulong>(); 
             var startTime = DateTime.UtcNow;
 
+            // --- BƯỚC 1: LẤY MẪU (SNAPSHOT 1) ---
             foreach (var p in processes)
             {
-                try
-                {
-                    // Chỉ lấy được thông tin nếu có quyền truy cập (Tránh lỗi Access Denied với process hệ thống)
-                    startCpuUsage[p.Id] = p.TotalProcessorTime;
-                }
-                catch 
+                try 
                 { 
-                    // Bỏ qua nếu không truy cập được
-                }
+                    // CPU
+                    startCpuUsage[p.Id] = p.TotalProcessorTime; 
+                    
+                    // DISK (Dùng hàm API riêng để fix lỗi không tìm thấy property)
+                    if (GetProcessIoCounters(p.Handle, out var counters))
+                    {
+                        startDiskUsage[p.Id] = counters.ReadTransferCount + counters.WriteTransferCount;
+                    }
+                } 
+                catch { }
             }
 
-            // --- BƯỚC 2: SAMPLING (LẤY MẪU) ---
-            // Tạm dừng 300ms để tạo "khoảng chênh lệch". 
-            // CPU Usage là con số tức thời, ta cần đo (Work Done) / (Time Elapsed).
-            Thread.Sleep(300);
+            // --- BƯỚC 2: CHỜ (SAMPLING) ---
+            Thread.Sleep(300); // 300ms delay
 
-            // --- BƯỚC 3: TÍNH TOÁN ---
             var endTime = DateTime.UtcNow;
-            var totalSampleTime = (endTime - startTime).TotalMilliseconds; // Tổng thời gian trôi qua thực tế
-            var cpuCoreCount = Environment.ProcessorCount; // Số nhân CPU (để chia tỉ lệ % tổng)
+            
+            // SỬA LỖI: Khai báo biến này ở đây để dùng được bên dưới
+            double totalSampleTimeMs = (endTime - startTime).TotalMilliseconds;
+            int cpuCoreCount = Environment.ProcessorCount;
 
-            // Lọc và sắp xếp: Chỉ lấy Top 100 tiến trình ngốn RAM nhất để tối ưu băng thông mạng khi gửi về Client
-            var sortedProcesses = processes
-                .OrderByDescending(p => p.WorkingSet64)
-                .Take(100)
-                .ToList();
+            // Lấy Top 100 process nặng nhất để tối ưu hiệu năng
+            var sortedProcesses = processes.OrderByDescending(p => p.WorkingSet64).Take(1000).ToList();
 
+            // --- BƯỚC 3: TÍNH TOÁN (SNAPSHOT 2) ---
             foreach (var p in sortedProcesses)
             {
                 try
                 {
                     string cpuText = "0%";
+                    string diskText = "0 KB/s";
 
-                    // Nếu tiến trình này đã tồn tại từ lúc bắt đầu đo (có trong Dictionary)
+                    // Tính CPU
                     if (startCpuUsage.ContainsKey(p.Id))
                     {
-                        var endCpuUsage = p.TotalProcessorTime;
-                        
-                        // Thời gian CPU tiến trình đã dùng trong khoảng 300ms vừa qua
-                        var cpuUsedMs = (endCpuUsage - startCpuUsage[p.Id]).TotalMilliseconds;
-
-                        // Công thức tính % CPU:
-                        // (Thời gian CPU dùng / Tổng thời gian trôi qua) / Số nhân * 100
-                        // Chia cho cpuCoreCount vì TotalProcessorTime có thể lớn hơn thời gian thực (trên máy đa nhân)
-                        double cpuPercent = (cpuUsedMs / totalSampleTime) / cpuCoreCount * 100;
-
-                        // Làm tròn 1 chữ số thập phân cho đẹp
-                        if (cpuPercent > 0)
-                            cpuText = cpuPercent.ToString("0.0") + "%";
+                        try 
+                        {
+                            var endCpuUsage = p.TotalProcessorTime;
+                            var cpuUsedMs = (endCpuUsage - startCpuUsage[p.Id]).TotalMilliseconds;
+                            
+                            // Công thức tính % CPU
+                            double cpuPercent = (cpuUsedMs / totalSampleTimeMs) / cpuCoreCount * 100;
+                            if (cpuPercent > 0) cpuText = cpuPercent.ToString("0.0") + "%";
+                        }
+                        catch {}
                     }
 
-                    // Chuyển đổi RAM từ Bytes sang MB
+                    // Tính Disk I/O
+                    if (startDiskUsage.ContainsKey(p.Id))
+                    {
+                        try
+                        {
+                            if (GetProcessIoCounters(p.Handle, out var endCounters))
+                            {
+                                ulong endDisk = endCounters.ReadTransferCount + endCounters.WriteTransferCount;
+                                
+                                // Tính lượng thay đổi (Delta)
+                                if (endDisk > startDiskUsage[p.Id])
+                                {
+                                    ulong deltaBytes = endDisk - startDiskUsage[p.Id];
+                                    
+                                    // Bytes trên giây
+                                    double bytesPerSec = deltaBytes / (totalSampleTimeMs / 1000.0);
+
+                                    // Format hiển thị
+                                    if (bytesPerSec > 1024 * 1024) 
+                                        diskText = $"{bytesPerSec / 1024 / 1024:F1} MB/s";
+                                    else if (bytesPerSec > 0) 
+                                        diskText = $"{bytesPerSec / 1024:F0} KB/s";
+                                }
+                            }
+                        }
+                        catch {}
+                    }
+
+                    // Metadata
+                    string description = "";
+                    try { description = p.MainModule?.FileVersionInfo.FileDescription; } catch { }
+                    if (string.IsNullOrEmpty(description)) description = p.ProcessName;
+
+                    int threads = 0, handles = 0;
+                    try { threads = p.Threads.Count; } catch { }
+                    try { handles = p.HandleCount; } catch { }
+
                     double memMb = p.WorkingSet64 / 1024.0 / 1024.0;
 
                     list.Add(new ProcessInfo
                     {
                         Pid = p.Id,
                         Name = p.ProcessName,
+                        Description = description,
+                        Threads = threads,
+                        Handles = handles,
                         Cpu = cpuText,
-                        Mem = $"{memMb:F0} MB" // F0: Không lấy số lẻ thập phân cho gọn
+                        Mem = $"{memMb:F0} MB",
+                        Disk = diskText
                     });
                 }
-                catch 
-                { 
-                    // Bỏ qua các process bị tắt giữa chừng hoặc không truy cập được
-                }
+                catch { } 
             }
 
             return list;

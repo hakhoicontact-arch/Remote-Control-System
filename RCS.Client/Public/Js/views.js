@@ -28,7 +28,7 @@ export function renderAppLayout() {
                     </svg>
 
                     <input 
-                        id="app-search" 
+                        id="app-search name" 
                         type="text" 
                         placeholder="Nhập tên để mở" 
                         class="uiv-search-input uiv-anim-width-app-search"
@@ -96,11 +96,92 @@ export function updateAppTable(apps) {
 // --- PROCESS VIEW ---
 export function renderProcessLayout() {
     return `
-        <div class="space-y-4">
+        <div class="space-y-6">
+             <!-- 1. HEADER THỐNG KÊ (DASHBOARD STYLE) -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <!-- CPU Card -->
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-blue-500 font-bold uppercase tracking-wider">CPU Usage</p>
+                        <i class="fas fa-microchip text-blue-200 text-lg"></i>
+                    </div>
+                    <p id="total-cpu" class="text-xl font-mono font-bold text-slate-700 mt-1">0%</p>
+                    <div class="w-full bg-blue-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="bar-cpu" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <!-- Dòng chú thích nhỏ -->
+                    <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                        <i class="fas fa-info-circle mr-1"></i>Mức độ sử dụng
+                    </p>
+                </div>
+
+                <!-- RAM Card -->
+                <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-purple-500 font-bold uppercase tracking-wider">Memory</p>
+                        <i class="fas fa-memory text-purple-200 text-lg"></i>
+                    </div>
+                    <p id="total-mem" class="text-xl font-mono font-bold text-slate-700 mt-1">0 MB</p>
+                    <div class="w-full bg-purple-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="bar-mem" class="bg-purple-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <!-- Dòng chú thích nhỏ -->
+                    <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                        <i class="fas fa-server mr-1"></i>Đang chiếm dụng
+                    </p>
+                </div>
+
+                <!-- Disk Card -->
+                <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-orange-500 font-bold uppercase tracking-wider">Disk I/O</p>
+                        <i class="fas fa-hdd text-orange-200 text-lg"></i>
+                    </div>
+                    <p id="total-disk" class="text-xl font-mono font-bold text-slate-700 mt-1">0 KB/s</p>
+                    <div class="w-full bg-orange-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="bar-disk" class="bg-orange-400 h-full rounded-full w-0 transition-all duration-500 opacity-50"></div>
+                    </div>
+                    <!-- Dòng chú thích nhỏ -->
+                    <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                        <i class="fas fa-exchange-alt mr-1"></i>Tốc độ Đọc/Ghi
+                    </p>
+                </div>
+
+                <!-- Processes Count -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Processes</p>
+                        <i class="fas fa-tasks text-slate-300 text-lg"></i>
+                    </div>
+                    <p id="total-count" class="text-xl font-mono font-bold text-slate-700 mt-1">0</p>
+                    <!-- Dòng chú thích nhỏ -->
+                    <p class="text-[10px] text-slate-400 mt-2 font-medium">
+                        <i class="fas fa-list-ul mr-1"></i>Tiến trình chạy
+                    </p>
+                </div>
+
+                <!-- Threads/Handles -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm hidden md:block">
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">System Info</p>
+                    <div class="flex justify-between items-end mb-1">
+                        <span class="text-[10px] text-slate-400 font-medium">Threads</span>
+                        <span id="total-threads" class="font-mono font-bold text-slate-600 text-sm">0</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="text-[10px] text-slate-400 font-medium">Handles</span>
+                        <span id="total-handles" class="font-mono font-bold text-slate-600 text-sm">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. TOOLBAR -->
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center space-x-3">
                     <button id="list-processes-btn" class="btn-primary bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md shadow-blue-200 hover:bg-blue-700 transition-all">
                         <i class="fas fa-sync-alt mr-2"></i> Cập Nhật
+                    </button>
+                    <button id="start-process-btn" class="btn-primary bg-green-600 text-white px-4 py-2 rounded-lg shadow-md shadow-green-200 hover:bg-green-700 transition-all">
+                        <i class="fas fa-plus mr-2"></i> Mở Process
                     </button>
                     <div class="uiv-search-box ml-4">
                         <svg fill="#6b7280" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
@@ -114,28 +195,24 @@ export function renderProcessLayout() {
                             class="uiv-search-input uiv-anim-width"
                         >
                     </div>
-                    <button id="start-process-btn" class="btn-primary bg-green-600 text-white px-4 py-2 rounded-lg shadow-md shadow-green-200 hover:bg-green-700 transition-all">
-                        <i class="fas fa-plus mr-2"></i> Mở Process
-                    </button>
                     <input id="process-start-path" type="hidden"> </div>
-                <div class="bg-gray-100 px-4 py-2 rounded-lg border border-gray-300 text-sm font-mono text-gray-700">
-                    <span id="total-cpu" class="mr-4 font-bold text-blue-600">CPU: 0%</span>
-                    <span id="total-mem" class="font-bold text-purple-600">RAM: 0 MB</span>
-                </div>
             </div>
+
+            <!-- 3. TABLE -->
             <div class="table-container bg-gray-50 rounded-lg shadow-inner">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-200 sticky top-0 select-none">
+                <table class="min-w-full divide-y divide-gray-100">
+                    <thead class="bg-gray-50 sticky top-0 select-none z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-3 cursor-pointer" onclick="window.handleSortProcess('pid')"><div class="flex items-center">PID ${getSortIcon('pid', state.currentSort)}</div></th>
                             <th class="px-6 py-3 cursor-pointer" onclick="window.handleSortProcess('name')"><div class="flex items-center">Tên ${getSortIcon('name', state.currentSort)}</div></th>
                             <th class="px-6 py-3 cursor-pointer" onclick="window.handleSortProcess('cpu')"><div class="flex items-center">CPU ${getSortIcon('cpu', state.currentSort)}</div></th>
                             <th class="px-6 py-3 cursor-pointer" onclick="window.handleSortProcess('mem')"><div class="flex items-center">RAM ${getSortIcon('mem', state.currentSort)}</div></th>
+                            <th class="px-6 py-3 cursor-pointer" onclick="window.handleSortProcess('disk')"><div class="flex items-center">DISK ${getSortIcon('disk', state.currentSort)}</div></th>
                             <th class="px-6 py-3 text-center">Thao Tác</th>
                         </tr>
                     </thead>
-                    <tbody id="process-list-body" class="bg-white divide-y divide-gray-200">
-                        ${getLoadingRow(5)}
+                    <tbody id="process-list-body" class="bg-white divide-y divide-slate-50 text-sm">
+                         <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500 italic">Đang tải dữ liệu...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -145,32 +222,87 @@ export function renderProcessLayout() {
 
 export function updateProcessTable(processes) {
     const tbody = document.getElementById('process-list-body');
-    const totalCpuEl = document.getElementById('total-cpu');
-    const totalMemEl = document.getElementById('total-mem');
-    if (!tbody) return;
+    const TOTAL_SYSTEM_RAM_MB = 16384;
+    
+    // --- TÍNH TOÁN TỔNG HỢP (SUMMARY STATS) ---
+    let totalCpu = 0, totalMem = 0, totalThreads = 0, totalHandles = 0;
+    
+    // Biến để cộng dồn Disk (KB/s)
+    let totalDiskKB = 0;
 
-    if (!processes || processes.length === 0) {
-        tbody.innerHTML = getEmptyRow(5);
-        if(totalCpuEl) totalCpuEl.textContent = "CPU: 0%";
-        if(totalMemEl) totalMemEl.textContent = "RAM: 0 MB";
-        return;
+    processes.forEach(p => {
+        totalCpu += parseFloat(p.cpu?.replace('%', '') || 0);
+        totalMem += parseFloat(p.mem?.replace(/[^\d]/g, '') || 0);
+        totalThreads += (p.threads || 0);
+        totalHandles += (p.handles || 0);
+
+        // Parse Disk string (VD: "1.5 MB/s" hoặc "500 KB/s")
+        let diskVal = 0;
+        let diskStr = p.disk || "0";
+        if (diskStr.includes("MB/s")) diskVal = parseFloat(diskStr) * 1024;
+        else if (diskStr.includes("KB/s")) diskVal = parseFloat(diskStr);
+        totalDiskKB += diskVal;
+    });
+
+    totalMem *= 0.8;
+
+    // Cập nhật DOM Header
+    const elCpu = document.getElementById('total-cpu');
+    const elMem = document.getElementById('total-mem');
+    const elDisk = document.getElementById('total-disk');
+    const elCount = document.getElementById('total-count');
+    const elThreads = document.getElementById('total-threads');
+    const elHandles = document.getElementById('total-handles');
+    const barCpu = document.getElementById('bar-cpu');
+    const barMem = document.getElementById('bar-mem');
+    const barDisk = document.getElementById('bar-disk');
+
+    if (elCpu) {
+        elCpu.textContent = `${totalCpu.toFixed(1)}%`;
+        if (barCpu) barCpu.style.width = `${Math.min(totalCpu, 100)}%`;
+    }
+    if (elMem) elMem.textContent = `${totalMem.toFixed(0)} MB`;
+
+    // SỬA: Thêm đoạn này để thanh bar chạy
+    if (barMem) {
+        const memPercent = (totalMem / TOTAL_SYSTEM_RAM_MB) * 100;
+        barMem.style.width = `${Math.min(memPercent, 100)}%`;
+    }
+    if (elDisk) {
+        if (totalDiskKB > 1024) elDisk.textContent = `${(totalDiskKB/1024).toFixed(1)} MB/s`;
+        else elDisk.textContent = `${totalDiskKB.toFixed(0)} KB/s`;
     }
 
-    // Tính tổng
-    let totalCpu = 0, totalMem = 0;
-    processes.forEach(p => {
-        totalCpu += parseFloat(p.cpu.replace('%', '')) || 0;
-        totalMem += parseFloat(p.mem.replace(' MB', '').replace(',', '')) || 0;
-    });
-    if(totalCpuEl) totalCpuEl.textContent = `CPU: ${totalCpu.toFixed(1)}%`;
-    if(totalMemEl) totalMemEl.textContent = `RAM: ${totalMem.toFixed(0)} MB`;
+    if(elDisk && barDisk) {
+        const displayDisk = totalDiskKB > 1024 ? `${(totalDiskKB/1024).toFixed(1)} MB/s` : `${totalDiskKB.toFixed(0)} KB/s`;
+        elDisk.textContent = displayDisk;
+        // Giả sử mốc Disk cao là 10MB/s (10240 KB/s) làm mốc 100%
+        const diskPercent = (totalDiskKB / 10240) * 100;
+        barDisk.style.width = `${Math.min(diskPercent, 100)}%`;
+    }
+
+    if (elCount) elCount.textContent = processes.length;
+    if (elThreads) elThreads.textContent = totalThreads;
+    if (elHandles) elHandles.textContent = totalHandles;
+
+    // --- RENDER BẢNG ---
+    if (!processes || processes.length === 0) {
+        // ... (Empty logic)
+        return;
+    }
 
     tbody.innerHTML = processes.map(p => `
         <tr>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">${p.pid}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 truncate max-w-xs" title="${p.name}">${p.name}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 truncate max-w-xs" title="${p.name}">
+                <div class="flex flex-col">
+                    <span class="font-medium text-slate-900 truncate max-w-[150px]" title="${p.name}">${p.name}</span>
+                    <span class="text-[10px] text-slate-400 truncate max-w-[200px] hidden md:block" title="${p.description}">${p.description || '-'}</span>
+                </div>
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-semibold ${parseFloat(p.cpu) > 50 ? 'text-red-600' : ''}">${p.cpu || '0%'}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.mem || '0 MB'}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">${p.disk || '0 KB/s'}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                 <button data-action="kill-process" data-id="${p.pid}" class="text-red-600 hover:text-red-900 transition-colors"><i class="fas fa-times-circle"></i> Kill</button>
             </td>
@@ -213,12 +345,47 @@ export function renderKeyloggerDisplay() {
 export function renderWebcamControl() {
     return `
         <div class="space-y-4 h-full flex flex-col items-center"> <!-- Thêm items-center để căn giữa toàn bộ -->
+
+            <!-- MODAL LƯU VIDEO (Mặc định ẩn) -->
+            <div id="save-video-modal" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm hidden">
+                <div class="bg-white p-6 rounded-2xl shadow-2xl w-96 border border-slate-200 transform scale-100 transition-all">
+                    <div class="text-center mb-4">
+                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-file-video text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">Lưu Video Đã Ghi</h3>
+                        <p class="text-xs text-slate-500">Định dạng: WebM</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tên file</label>
+                        <input type="text" id="video-filename" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" placeholder="record_abc...">
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button id="cancel-save-video" class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium text-sm transition-colors">Hủy</button>
+                        <button id="confirm-save-video" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm shadow-lg shadow-blue-200 transition-colors">Lưu Ngay</button>
+                    </div>
+                </div>
+            </div>
             
-            <!-- Thanh điều khiển (Giữ nguyên) -->
+            <!-- Thanh điều khiển -->
             <div class="w-full max-w-5xl flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100">
                 <div class="flex items-center gap-2">
                     <span class="text-red-500 animate-pulse"><i class="fas fa-circle text-[10px]"></i></span>
                     <span class="font-bold text-gray-700">WEBCAM STREAM</span>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <!-- NÚT GHI HÌNH MỚI -->
+                    <div id="recording-ui" class="hidden flex items-center mr-2 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100">
+                        <span class="w-2 h-2 bg-red-600 rounded-full animate-ping mr-2"></span>
+                        <span id="record-timer" class="font-mono font-bold text-sm">00:00</span>
+                    </div>
+
+                    <button id="record-btn" class="text-slate-600 bg-slate-100 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors border border-slate-200 flex items-center">
+                        <i class="fas fa-record-vinyl mr-2 text-red-500"></i> Ghi hình
+                    </button>
                 </div>
                 
                 <div class="flex space-x-2">
@@ -239,7 +406,8 @@ export function renderWebcamControl() {
             <!-- 2. aspect-video: Ép khung hình về tỉ lệ 16:9 chuẩn youtube -->
             <!-- 3. w-full: Chiếm hết chiều rộng cho phép -->
             <div id="webcam-area" class="w-full max-w-5xl aspect-video bg-black rounded-xl border-4 border-gray-800 relative flex items-center justify-center overflow-hidden shadow-2xl">
-                
+                <!-- CANVAS ẨN ĐỂ GHI HÌNH -->
+                <canvas id="hidden-recorder-canvas" style="display:none;"></canvas>
                 <!-- OVERLAY THỐNG KÊ -->
                 <div id="webcam-stats-overlay" class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm p-3 rounded-lg pointer-events-none border border-white/10 shadow-lg z-10" style="display: none;">
                     <!-- Nội dung JS điền vào -->

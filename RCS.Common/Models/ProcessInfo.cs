@@ -8,12 +8,19 @@
 
 namespace RCS.Common.Models
 {
-    // Thông tin về một process đang chạy
     public class ProcessInfo
     {
-        public int Pid { get; set; }    // Process ID
-        public string Name { get; set; } // Tên process
-        public string Cpu { get; set; } // % CPU sử dụng, ví dụ: "12.5%"
-        public string Mem { get; set; } // % RAM sử dụng, ví dụ: "150 MB"
+        public int Pid { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        
+        // Các thông số chi tiết
+        public int Threads { get; set; }
+        public int Handles { get; set; }
+        
+        // Tài nguyên sử dụng
+        public string Cpu { get; set; }     // VD: 12.5%
+        public string Mem { get; set; }     // VD: 150 MB
+        public string Disk { get; set; }    // MỚI: VD: 2.5 MB/s
     }
 }

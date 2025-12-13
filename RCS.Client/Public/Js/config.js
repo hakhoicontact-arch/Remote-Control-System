@@ -20,8 +20,12 @@ export const state = {
     currentSort: { column: 'pid', direction: 'asc' }, // Cho Process
     currentAppSort: { column: 'name', direction: 'asc' }, // Cho App
 
+    screenshotPending: false,
+
     // Webcam Stats
     webcam: {
+        isStreaming: false,     // Cờ kiểm soát nhận dữ liệu
+
         isStatsVisible: false,
         lastFrameTime: performance.now(),
         currentFPS: 0,
@@ -30,7 +34,15 @@ export const state = {
         lastSampleTime: performance.now(),
         currentFrameSize: 0,
         totalDataReceived: 0,
-        totalTimeElapsed: 0
+        totalTimeElapsed: 0,
+
+        // --- CHO GHI HÌNH ---
+        isRecording: false,      // Đang ghi hay không
+        recordStartTime: 0,      // Thời điểm bắt đầu
+        recorder: null,          // Đối tượng MediaRecorder
+        recordedChunks: [],      // Dữ liệu video tạm
+        recordTimerInterval: null, // ID của bộ đếm giờ
+        canvasDrawerInterval: null // ID của vòng lặp vẽ canvas
     },
 
     // Screenshot
