@@ -82,30 +82,66 @@ graph LR
 
 ### Bước 1: Khởi chạy Server (Máy Quản Lý)
 
-Mở Terminal tại thư mục `RCS.Server`.
+- Mở Terminal tại thư mục `RCS.Server`.
 
-Chạy lệnh sau (Bắt buộc dùng `0.0.0.0` để nghe mọi IP):
+- Chạy lệnh sau (Bắt buộc dùng `0.0.0.0` để nghe mọi IP):
 
 ```
 dotnet run --urls="[http://0.0.0.0:5000](http://0.0.0.0:5000)"
 ```
 
-Lưu ý quan trọng: Cần mở cổng **5000 (TCP)** và **6000 (UDP)** trên Windows Firewall của máy Server.
+*Lưu ý quan trọng: Cần mở cổng **5000 (TCP)** và **6000 (UDP)** trên Windows Firewall của máy Server.*
 
 ### Bước 2: Khởi chạy Agent (Máy Bị Điều Khiển)
 
-Copy thư mục `RCS.Agent` sang máy cần điều khiển.
+- Copy thư mục `RCS.Agent` sang máy cần điều khiển.
 
-Mở Terminal tại thư mục đó.
+- Mở Terminal tại thư mục đó.
 
-Chạy lệnh kết nối tới IP của Server:
+- Chạy lệnh kết nối tới IP của Server:
 
 ```
 # Cú pháp: dotnet run -- <IP_CỦA_SERVER>
 dotnet run -- 192.168.1.10
 ```
 
-*(Nếu không nhập tham số, chương trình sẽ dừng lại và hỏi IP).*
+- *(Nếu không nhập tham số, chương trình sẽ dừng lại và hỏi IP).*
 
-Nhập tên định danh cho máy (Ví dụ: `PC_KeToan`).
+- Nhập tên định danh cho máy (Ví dụ: `PC_KeToan`).
+
+### Bước 3: Điều khiển trên Web
+
+- Tại máy quản lý, mở file `RCS.Client/public/index.html` (Khuyến khích dùng Live Server của VS Code).
+
+**Nhập thông tin:**
+
+> **IP Server: `172.0.0.1` (IP máy chạy Server).**
+>
+> **Tài khoản: `admin`**
+>
+> **Mật khẩu: `admin123`**
+
+- Nhấn nút `Đăng nhập`
+
+## 🔧 Khắc phục sự cố (Troubleshooting)
+
+| Vấn đề | Nguyên nhân | Giải pháp |
+| :--- | :--- | :--- |
+| **Web báo "Mất kết nối"** | Server chưa chạy hoặc Firewall chặn. | - Kiểm tra xem Server có đang chạy lệnh `dotnet run` không.<br>- Tắt tạm thời Firewall trên máy Server. |
+| **Agent báo "Refused"** | Agent kết nối sai IP hoặc Port 5000 chưa mở. | Kiểm tra lại IP Server đã nhập khi chạy Agent. |
+| **Webcam đen thui** | Mất gói tin UDP hoặc Camera bị chiếm dụng. | - Đảm bảo không có app nào khác (Zoom, Zalo) đang dùng Camera.<br>- Kiểm tra xem `Port 6000 UDP` có được mở không. |
+
+
+## 📝 License & Credits
+
+Dự án được thực hiện nhằm mục đích nghiên cứu và học tập môn Mạng Máy Tính.
+
+Authors: [Tên Nhóm Của Bạn] - Lớp 24CTT5.
+
+- Thành viên 1: Hà Đăng Khôi
+
+- Thành viên 2: Vương Đắc Gia Khiêm
+
+- Thành viên 3: Lê Đình Húy
+
 
