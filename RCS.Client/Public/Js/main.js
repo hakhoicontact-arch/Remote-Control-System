@@ -624,6 +624,7 @@ function doLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    setupThemeToggle();
     const toggleBtn = document.getElementById('sidebar-toggle');
             const sidebar = document.getElementById('sidebar');
             
@@ -984,3 +985,23 @@ function toggleSidebar() {
 }
 
 
+
+
+
+
+function setupThemeToggle() {
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    }
+}

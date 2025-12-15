@@ -56,7 +56,7 @@ export function getSortIcon(column, currentSortState) {
         : 'fa-caret-right';
     
     const styleClass = active 
-        ? 'text-blue-600 bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-200' 
+        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-200' 
         : 'text-gray-400 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-600';
 
     return `<span class="sort-btn ml-2 w-5 h-5 inline-flex items-center justify-center rounded-md border ${styleClass} transition-all cursor-pointer" title="Sắp xếp">

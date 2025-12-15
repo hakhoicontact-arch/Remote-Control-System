@@ -19,6 +19,23 @@
     <!-- Thư viện SignalR (Bắt buộc phải có trước main.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.7/signalr.min.js"></script>
 
+    
+    <!-- SỬA: Cấu hình Tailwind để hỗ trợ Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Quan trọng: Kích hoạt dark mode bằng class 'dark'
+        }
+    </script>
+
+    <!-- SCRIPT CHỐNG NHÁY SÁNG (Đặt ngay trong head) -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <style>
         body { font-family: 'Inter', sans-serif; }
         /* Hiệu ứng chuyển động mượt cho Sidebar */
@@ -37,56 +54,55 @@
     </style>
 </head>
 
-<body class="bg-slate-50 text-slate-800">
-    <button id="show-header-btn" class="hidden fixed top-2 right-4 z-50 bg-white/90 backdrop-blur text-blue-600 p-2 rounded-full shadow-lg border border-slate-200 hover:scale-110 transition-all duration-300" title="Hiện Menu">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
+    
+    <button id="show-header-btn" class="hidden fixed top-2 right-4 z-50 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-blue-600 dark:text-blue-400 p-2 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 hover:scale-110 transition-all duration-300" title="Hiện Menu">
         <i class="fas fa-chevron-down text-xl"></i>
     </button>
 
-    <!-- === 1. LOGIN MODAL (Giữ nguyên, chỉ chỉnh lại z-index cao nhất) === -->
     <div id="login-screen" class="fixed inset-0 z-60 flex items-center justify-center bg-slate-900 bg-opacity-90 backdrop-blur-sm transition-all duration-500">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700 dark:border-slate-600">
             
             <div class="text-center mb-8">
                 <div class="bg-blue-600 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50">
                     <i class="fas fa-shield-alt text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800">Đăng Nhập Hệ Thống</h2>
-                <p class="text-slate-500 text-sm mt-2">Remote Control System</p>
+                <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Đăng Nhập Hệ Thống</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-2">Remote Control System</p>
             </div>
             
             <form id="login-form" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Địa chỉ IP</label>
-                    <div class="rcs-input-group">
-                        <svg class="rcs-input-icon" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Địa chỉ IP</label>
+                    <div class="rcs-input-group text-slate-500 dark:text-slate-400"> <svg class="rcs-input-icon" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
-                        <input id="server-ip" class="rcs-input-field" type="text" placeholder="Ví dụ: 192.168.1.10" value="localhost" required>
+                        <input id="server-ip" class="rcs-input-field dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 dark:border-slate-600" type="text" placeholder="Ví dụ: 192.168.1.10" value="localhost" required>
                     </div>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Tài khoản</label>
-                    <div class="rcs-input-group">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tài khoản</label>
+                    <div class="rcs-input-group text-slate-500 dark:text-slate-400">
                         <svg class="rcs-input-icon" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
-                        <input id="username-input" class="rcs-input-field" type="text" placeholder="Nhập tài khoản..." required>
+                        <input id="username-input" class="rcs-input-field dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 dark:border-slate-600" type="text" placeholder="Nhập tài khoản..." required>
                     </div>
                 </div>
 
                 <div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Mật khẩu</label>
-                        <div class="rcs-input-group">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mật khẩu</label>
+                        <div class="rcs-input-group text-slate-500 dark:text-slate-400">
                             <svg class="rcs-input-icon" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" stroke-linecap="round" stroke-linejoin="round"></path>
                             </svg>
-                            <input id="password-input" class="rcs-input-field" type="password" placeholder="Nhập mật khẩu..." required>
+                            <input id="password-input" class="rcs-input-field dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 dark:border-slate-600" type="password" placeholder="Nhập mật khẩu..." required>
                         </div>
                     </div>
 
-                    <div id="login-error" class="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg p-3 mt-3 flex items-center hidden animate-pulse">
+                    <div id="login-error" class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs rounded-lg p-3 mt-3 flex items-center hidden animate-pulse">
                         <i class="fas fa-exclamation-circle mr-2 text-lg"></i>
                         <span>Sai tài khoản hoặc mật khẩu. Vui lòng thử lại.</span>
                     </div>
@@ -96,7 +112,6 @@
                     <span id="btn-text">Đăng Nhập</span>
                     <div class="arrow-wrapper">
                          <div class="arrow"></div>
-
                      </div>
                     <div id="btn-loader" class="hidden ml-2 loader w-4 h-4 border-2 border-white border-t-transparent"></div>
                 </button>
@@ -106,139 +121,129 @@
 
     <div id="app" class="flex h-screen w-full hidden opacity-0 transition-opacity duration-500">
         
-        <!-- A. SIDEBAR (BÊN TRÁI) -->
-        <aside id="sidebar" class="sidebar-transition transition [1500ms] w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 z-40 relative">
+        <aside id="sidebar" class="sidebar-transition transition [1500ms] w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col justify-between shrink-0 z-40 relative">
             
-            <!-- Logo Area -->
-            <!-- Logo Area & Toggle Button -->
-            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-100 logo-area">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-slate-700 logo-area">
                 <div class="flex items-center overflow-hidden">
-                    <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shrink-0 shadow-md shadow-blue-200 logo-icon">
+                    <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shrink-0 shadow-md shadow-blue-200 dark:shadow-none logo-icon">
                         <i class="fas fa-network-wired"></i>
                     </div>
-                    <span class="logo-text ml-3 font-bold text-xl text-slate-800 tracking-tight whitespace-nowrap">RCS Pro</span>
+                    <span class="logo-text ml-3 font-bold text-xl text-slate-800 dark:text-white tracking-tight whitespace-nowrap">RCS Pro</span>
                 </div>
 
-                <!-- NÚT 3 GẠCH  -->
-                <button id="sidebar-toggle" aria-label="Đóng mở menu" class="sidebar-toggle-btn p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-blue-600 transition-colors">
+                <button id="sidebar-toggle" aria-label="Đóng mở menu" class="sidebar-toggle-btn p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
             </div>
 
-            <!-- Menu Items -->
             <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-3">
                 
-                <button data-view="applications" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all group">
+                <button data-view="applications" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all group">
                     <i class="fas fa-layer-group  text-lg w-8 text-center text-blue-500 group-hover:scale-110 transition-transform"></i>
                     <span class="nav-text font-medium text-sm ml-2 whitespace-nowrap">Ứng Dụng</span>
                 </button>
 
-                <button data-view="processes" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-all group">
+                <button data-view="processes" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-emerald-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all group">
                     <i class="fas fa-microchip text-lg w-8 text-center text-emerald-500 group-hover:scale-110 transition-transform"></i>
                     <span class="nav-text font-medium text-sm ml-2 whitespace-nowrap">Tiến Trình & Specs</span>
                 </button>
 
-                <button data-view="screenshot" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 rounded-xl hover:bg-purple-50 hover:text-purple-600 transition-all group">
+                <button data-view="screenshot" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-purple-50 dark:hover:bg-slate-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all group">
                     <i class="fas fa-camera text-lg w-8 text-center text-purple-500 group-hover:scale-110 transition-transform"></i>
                     <span class="nav-text font-medium text-sm ml-2 whitespace-nowrap">Màn Hình</span>
                 </button>
 
-                <button data-view="keylogger" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 rounded-xl hover:bg-amber-50 hover:text-amber-600 transition-all group">
+                <button data-view="keylogger" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-amber-50 dark:hover:bg-slate-700 hover:text-amber-600 dark:hover:text-amber-400 transition-all group">
                     <i class="fas fa-keyboard text-lg w-8 text-center text-amber-500 group-hover:scale-110 transition-transform"></i>
                     <span class="nav-text font-medium text-sm ml-2 whitespace-nowrap">Keylogger</span>
                 </button>
 
-                <button data-view="webcam" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-all group">
+                <button data-view="webcam" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-rose-50 dark:hover:bg-slate-700 hover:text-rose-600 dark:hover:text-rose-400 transition-all group">
                     <i class="fas fa-video text-lg w-8 text-center text-rose-500 group-hover:scale-110 transition-transform"></i>
                     <span class="nav-text font-medium text-sm ml-2 whitespace-nowrap">Webcam Stream</span>
                 </button>
 
-                <div class="h-px bg-slate-200 my-2 mx-2"></div>
+                <div class="h-px bg-slate-200 dark:bg-slate-700 my-2 mx-2"></div>
 
-                <button data-view="system" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 rounded-xl hover:bg-slate-100 hover:text-slate-800 transition-all group">
-                    <i class="fas fa-cog text-lg w-8 text-center text-slate-500 group-hover:rotate-90 transition-transform"></i>
+                <button data-view="system" class="tab-btn nav-item w-full flex items-center px-3 py-3 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-all group">
+                    <i class="fas fa-cog text-lg w-8 text-center text-slate-500 dark:text-slate-400 group-hover:rotate-90 transition-transform"></i>
                     <span class="nav-text font-medium text-sm ml-2 whitespace-nowrap">Hệ Thống</span>
                 </button>
             </nav>
 
-            <!-- User Footer -->
-            <div class="p-4 border-t border-slate-100">
-                <div class="flex items-center p-2 rounded-xl bg-slate-50 border border-slate-200">
-                    <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
+            <div class="p-4 border-t border-slate-100 dark:border-slate-700">
+                <div class="flex items-center p-2 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                    <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 flex items-center justify-center font-bold text-xs shrink-0">
                         AD
                     </div>
                     <div class="nav-text ml-3 overflow-hidden">
-                        <p class="text-xs font-bold text-slate-700 truncate" id="user-display">Admin</p>
-                        <p class="text-[10px] text-green-600 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span> Online</p>
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate" id="user-display">Admin</p>
+                        <p class="text-[10px] text-green-600 dark:text-green-400 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span> Online</p>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- B. MAIN CONTENT (BÊN PHẢI) -->
-        <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-900 relative transition-colors duration-300">
             
-            <!-- Topbar (Thanh công cụ trên cùng) -->
-            <header id="main-header" class="bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-5 mb-6 z-20 flex justify-between items-center transition-all duration-300 hover:shadow-md">
-            <div class="flex items-center gap-4">
-                <div class="bg-blue-600 text-white p-3 rounded-xl shadow-blue-200 shadow-lg">
+            <header id="main-header" class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm rounded-2xl p-5 mb-6 z-20 flex justify-between items-center transition-all duration-300 hover:shadow-md">
+                <div class="flex items-center gap-4">
+                    <div class="bg-blue-600 text-white p-3 rounded-xl shadow-blue-200 dark:shadow-none shadow-lg">
                     <i class="fas fa-network-wired text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-                        RCS <span class="text-slate-400 font-light">|</span> Đồ án mạng máy tính 24CTT5
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                        RCS <span class="text-slate-400 dark:text-slate-500 font-light">|</span> Đồ án mạng máy tính 24CTT5
                     </h1>
                     <div class="flex items-center gap-2 mt-1">
                         <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-                        <p id="status-display" class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <p id="status-display" class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                             Đang kết nối...
                         </p>
                     </div>
+
+                    <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-yellow-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="Chế độ sáng tối">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:inline"></i>
+                    </button>
                 </div>
             </div>
 
             <div class="flex items-center gap-4">
-                <div class="text-right bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                <div class="text-right bg-slate-50 dark:bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-100 dark:border-slate-600">
                     <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Target Agent</p>
-                    <p class="font-mono font-bold text-blue-600 text-lg" id="agent-id-display">...</p>
+                    <p class="font-mono font-bold text-blue-600 dark:text-blue-400 text-lg" id="agent-id-display">...</p>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <span id="user-display" class="text-sm font-semibold text-slate-600 mr-2"></span>
+                    <span id="user-display" class="text-sm font-semibold text-slate-600 dark:text-slate-300 mr-2"></span>
                     
-                    <button id="logout-btn">
-                        <div id="logout-sign">
-                            <svg viewBox="0 0 512 512" width="18" height="18">
-                                <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
+                    <button id="logout-btn" class="dark:text-slate-300 dark:hover:text-white"> <div id="logout-sign" class="dark:border-white"> <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor"> <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
                             </svg>
                         </div>
                         <div id="logout-text">Logout</div>
                     </button>
-                    <!-- NÚT ẨN HEADER -->
-                    <button id="hide-header-btn" class="bg-slate-100 text-slate-500 p-3 rounded-xl hover:bg-slate-200 transition-colors" title="Ẩn thanh này">
+                    <button id="hide-header-btn" class="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 p-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" title="Ẩn thanh này">
                         <i class="fas fa-chevron-up"></i>
                     </button>
                 </div>
             </div>
         </header>
 
-            <!-- Khu vực nội dung chính (Scrollable) -->
             <div id="content-area" class="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth relative">
-                <!-- Nội dung các tab sẽ được JS vẽ vào đây -->
-            </div>
+                </div>
         </main>
 
-        <!-- Modal Container (Giữ nguyên) -->
         <div id="modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center transition-opacity duration-300">
-            <div id="custom-modal" class="bg-white border border-slate-200 p-6 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-100">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                    <i class="fas fa-exclamation text-red-600 text-xl"></i>
+            <div id="custom-modal" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-100">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/50 rounded-full mb-4">
+                    <i class="fas fa-exclamation text-red-600 dark:text-red-400 text-xl"></i>
                 </div>
-                <h3 id="modal-title" class="text-lg font-bold text-center text-slate-800 mb-2">Xác Nhận</h3>
-                <p id="modal-message" class="text-slate-500 text-center text-sm mb-6">Bạn có chắc chắn?</p>
+                <h3 id="modal-title" class="text-lg font-bold text-center text-slate-800 dark:text-white mb-2">Xác Nhận</h3>
+                <p id="modal-message" class="text-slate-500 dark:text-slate-400 text-center text-sm mb-6">Bạn có chắc chắn?</p>
                 <div class="flex justify-center space-x-3">
-                    <button id="modal-cancel-btn" class="px-5 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors">Hủy</button>
-                    <button id="modal-confirm-btn" class="px-5 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all">Xác Nhận</button>
+                    <button id="modal-cancel-btn" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Hủy</button>
+                    <button id="modal-confirm-btn" class="px-5 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none transition-all">Xác Nhận</button>
                 </div>
             </div>
         </div>
