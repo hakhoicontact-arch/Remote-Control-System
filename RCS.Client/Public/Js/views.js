@@ -460,40 +460,55 @@ export function renderKeyloggerDisplay() {
 
 export function renderWebcamControl() {
     return `
-        <div class="space-y-4 h-full flex flex-col items-center"> <!-- Thêm items-center để căn giữa toàn bộ -->
+        <div class="space-y-4 h-full flex flex-col items-center relative">
+            
+            <!-- MODAL LƯU & XEM LẠI VIDEO -->
+            <div id="save-video-modal" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm hidden">
+                <div class="bg-white p-5 rounded-2xl shadow-2xl w-[600px] border border-slate-200 transform scale-100 transition-all">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                            <i class="fas fa-film text-blue-600 mr-2"></i> Xem lại bản ghi
+                        </h3>
+                        <div class="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded" id="video-size-info">0 MB</div>
+                    </div>
 
-            <!-- MODAL LƯU VIDEO (Mặc định ẩn) -->
-            <div id="save-video-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm hidden">
-                <div class="bg-white p-6 rounded-2xl shadow-2xl w-96 border border-slate-200 transform scale-100 transition-all">
-                    <div class="text-center mb-4">
-                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-file-video text-xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-800">Lưu Video Đã Ghi</h3>
-                        <p class="text-xs text-slate-500">Định dạng: WebM</p>
+                    <!-- TRÌNH PHÁT VIDEO -->
+                    <!-- controls: Hiện thanh tua, volume. autoplay: Tự chạy. -->
+                    <div class="bg-black rounded-lg overflow-hidden mb-4 border border-slate-300 aspect-video relative shadow-inner">
+                        <video id="playback-video" controls autoplay class="w-full h-full object-contain"></video>
                     </div>
                     
                     <div class="mb-4">
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tên file</label>
-                        <input type="text" id="video-filename" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" placeholder="record_abc...">
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Đặt tên file</label>
+                        <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                            <input type="text" id="video-filename" class="w-full p-2.5 outline-none font-mono text-sm text-slate-700" placeholder="record_video...">
+                            <span class="bg-slate-100 text-slate-500 px-3 py-2.5 text-sm font-medium border-l border-slate-300">.webm</span>
+                        </div>
                     </div>
                     
-                    <div class="flex space-x-2">
-                        <button id="cancel-save-video" class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium text-sm transition-colors">Hủy</button>
-                        <button id="confirm-save-video" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm shadow-lg shadow-blue-200 transition-colors">Lưu Ngay</button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Nút Đóng: Xóa video tạm và tắt modal -->
+                        <button id="cancel-save-video" class="px-4 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl font-bold text-sm transition-colors flex justify-center items-center">
+                            <i class="fas fa-times mr-2"></i> Đóng & Xóa
+                        </button>
+                        
+                        <!-- Nút Lưu: Tải về máy (Không đóng modal) -->
+                        <button id="confirm-save-video" class="px-4 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 transition-all flex justify-center items-center active:scale-95">
+                            <i class="fas fa-download mr-2"></i> Tải Xuống
+                        </button>
                     </div>
                 </div>
             </div>
-            
-            <!-- Thanh điều khiển -->
+
+            <!-- ... (Phần giao diện webcam bên dưới giữ nguyên) ... -->
             <div class="w-full max-w-5xl flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-100">
                 <div class="flex items-center gap-2">
                     <span class="text-red-500 animate-pulse"><i class="fas fa-circle text-[10px]"></i></span>
                     <span class="font-bold text-gray-700">WEBCAM STREAM</span>
                 </div>
-
+                
                 <div class="flex items-center space-x-2">
-                    <!-- NÚT GHI HÌNH MỚI -->
+                    <!-- UI Ghi hình -->
                     <div id="recording-ui" class="hidden flex items-center mr-2 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100">
                         <span class="w-2 h-2 bg-red-600 rounded-full animate-ping mr-2"></span>
                         <span id="record-timer" class="font-mono font-bold text-sm">00:00</span>
@@ -502,42 +517,35 @@ export function renderWebcamControl() {
                     <button id="record-btn" class="text-slate-600 bg-slate-100 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors border border-slate-200 flex items-center">
                         <i class="fas fa-record-vinyl mr-2 text-red-500"></i> Ghi hình
                     </button>
-                </div>
-                
-                <div class="flex space-x-2">
+
+                    <div class="h-6 w-px bg-gray-300 mx-2"></div>
+
                     <button id="webcam-on-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center shadow-md shadow-green-200">
                         <i class="fas fa-power-off mr-2"></i> Bật
                     </button>
                     <button id="webcam-off-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center shadow-md shadow-red-200">
                         <i class="fas fa-stop mr-2"></i> Tắt
                     </button>
-                    <button id="toggle-stats-btn">
-                        <i class="fas fa-chart-bar mr-1"></i> Stats
+                    
+                    <button id="toggle-stats-btn" class="text-slate-600 bg-slate-100 px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors border border-slate-200" title="Stats">
+                        <i class="fas fa-chart-bar"></i>
                     </button>
                 </div>
             </div>
             
-            <!-- SỬA LỖI HIỂN THỊ TẠI ĐÂY -->
-            <!-- 1. max-w-5xl: Giới hạn chiều rộng tối đa (nhỏ lại, không tràn viền) -->
-            <!-- 2. aspect-video: Ép khung hình về tỉ lệ 16:9 chuẩn youtube -->
-            <!-- 3. w-full: Chiếm hết chiều rộng cho phép -->
             <div id="webcam-area" class="w-full max-w-5xl aspect-video bg-black rounded-xl border-4 border-gray-800 relative flex items-center justify-center overflow-hidden shadow-2xl">
                 <!-- CANVAS ẨN ĐỂ GHI HÌNH -->
                 <canvas id="hidden-recorder-canvas" style="display:none;"></canvas>
-                <!-- OVERLAY THỐNG KÊ -->
-                <div id="webcam-stats-overlay" class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm p-3 rounded-lg pointer-events-none border border-white/10 shadow-lg z-10" style="display: none;">
-                    <!-- Nội dung JS điền vào -->
-                </div>
+
+                <div id="webcam-stats-overlay" class="absolute top-4 right-4 bg-black/60 backdrop-blur-sm p-3 rounded-lg pointer-events-none border border-white/10 shadow-lg z-10" style="display: none;"></div>
                 
                 <div id="webcam-placeholder" class="text-gray-500 flex flex-col items-center z-0">
                     <div class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-4">
                         <i class="fas fa-video-slash fa-3x text-gray-600"></i>
                     </div>
                     <span class="text-lg font-medium">Camera Offline</span>
-                    <span class="text-sm text-gray-600">Nhấn "Bật" để bắt đầu stream</span>
                 </div>
                 
-                <!-- SỬA: Thêm class 'object-contain' để giữ đúng tỉ lệ hình ảnh, không bị méo -->
                 <img id="webcam-stream" src="" alt="Video Webcam Agent" class="w-full h-full object-contain absolute inset-0 z-1" style="display:none" />
             </div>
         </div>

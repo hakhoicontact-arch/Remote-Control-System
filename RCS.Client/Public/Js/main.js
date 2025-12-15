@@ -825,35 +825,85 @@ function updateRecordTimer() {
 function showSaveVideoModal() {
     const modal = document.getElementById('save-video-modal');
     const nameInput = document.getElementById('video-filename');
+    const videoPlayer = document.getElementById('playback-video');
+    const sizeInfo = document.getElementById('video-size-info');
     
-    // Đặt tên mặc định theo ngày giờ
+    // Đặt tên mặc định
     const now = new Date();
     const defaultName = `RCS_Rec_${now.getHours()}${now.getMinutes()}_${now.getDate()}${now.getMonth()+1}`;
     nameInput.value = defaultName;
     
+    // --- 1. TẠO BLOB VÀ URL ĐỂ PREVIEW ---
+    const blob = new Blob(state.webcam.recordedChunks, { type: 'video/webm' });
+    
+    // Hiển thị dung lượng file
+    const sizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+    if(sizeInfo) sizeInfo.textContent = `${sizeMB} MB`;
+
+    // Tạo URL ảo
+    const videoUrl = URL.createObjectURL(blob);
+    
+    // Gán vào player để xem ngay lập tức
+    if (videoPlayer) {
+        videoPlayer.src = videoUrl;
+        // Load lại để trình duyệt nhận diện độ dài video (hỗ trợ tua)
+        videoPlayer.load();
+    }
+
     modal.classList.remove('hidden');
 
-    // Xử lý nút Lưu
-    document.getElementById('confirm-save-video').onclick = () => {
+    // Hàm dọn dẹp bộ nhớ (Chỉ gọi khi bấm Đóng)
+    const cleanup = () => {
+        if (videoPlayer) {
+            videoPlayer.pause();
+            videoPlayer.src = ""; // Ngắt nguồn video
+        }
+        URL.revokeObjectURL(videoUrl); // Giải phóng RAM trình duyệt
+        state.webcam.recordedChunks = []; // Xóa dữ liệu tạm
+        modal.classList.add('hidden');
+    };
+
+    // Xử lý nút Lưu (Download tùy ý)
+    const saveBtn = document.getElementById('confirm-save-video');
+    
+    // Clone node để xóa các event listener cũ (tránh bị click đúp)
+    const newSaveBtn = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+
+    newSaveBtn.onclick = () => {
         let filename = nameInput.value.trim() || defaultName;
         if (!filename.endsWith('.webm')) filename += '.webm';
         
-        const blob = new Blob(state.webcam.recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
+        // Tải xuống file
         const a = document.createElement('a');
-        a.href = url;
+        a.href = videoUrl;
         a.download = filename;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
         
-        modal.classList.add('hidden');
-        state.webcam.recordedChunks = []; // Dọn dẹp
+        // Không gọi cleanup() ở đây để người dùng có thể tải lại nếu muốn
+        // Hiệu ứng nhẹ để báo đã lưu
+        const originalText = newSaveBtn.innerHTML;
+        newSaveBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Đã Lưu';
+        newSaveBtn.classList.replace('bg-blue-600', 'bg-green-600');
+        setTimeout(() => {
+            newSaveBtn.innerHTML = originalText;
+            newSaveBtn.classList.replace('bg-green-600', 'bg-blue-600');
+        }, 2000);
     };
 
-    // Xử lý nút Hủy
-    document.getElementById('cancel-save-video').onclick = () => {
-        modal.classList.add('hidden');
-        state.webcam.recordedChunks = []; // Hủy bỏ video vừa quay
+    // Xử lý nút Đóng (Hủy & Xóa)
+    const cancelBtn = document.getElementById('cancel-save-video');
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+    newCancelBtn.onclick = () => {
+        // Hỏi xác nhận nếu file lớn (tránh bấm nhầm mất video)
+        if (blob.size > 1024 * 1024 * 5) { // Nếu > 5MB
+            if (!confirm("Video chưa được lưu sẽ bị xóa vĩnh viễn. Bạn chắc chắn muốn đóng?")) return;
+        }
+        cleanup();
     };
 }
 
@@ -932,3 +982,5 @@ function toggleSidebar() {
         sidebar.classList.add('w-20', 'sidebar-collapsed');
     }
 }
+
+
