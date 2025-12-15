@@ -101,7 +101,7 @@ const KEY_MAPPING = {
     'NumPad0': '0', 'NumPad1': '1', 'NumPad2': '2', 'NumPad3': '3', 'NumPad4': '4',
     'NumPad5': '5', 'NumPad6': '6', 'NumPad7': '7', 'NumPad8': '8', 'NumPad9': '9',
     'Decimal': '.', 'Add': '+', 'Subtract': '-', 'Multiply': '*', 'Divide': '/',
-    'OemPipe': '\\', 'Oem4': '[', 'OemSemicolon': ';', 'Oem2': '/'
+    'OemPipe': '\\', 'Oem4': '[', 'OemSemicolon': ';', 'Oem2': '/', 'Enter': '\n'
 };
 
 // Bảng Map ký tự khi giữ Shift (Shift + Key = NewKey)

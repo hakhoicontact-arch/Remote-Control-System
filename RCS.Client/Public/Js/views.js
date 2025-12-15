@@ -272,7 +272,7 @@ export function renderProcessLayout() {
             <!-- 3. TABLE -->
             <div class="table-container bg-gray-50 rounded-lg shadow-inner">
                 <table class="min-w-full divide-y divide-gray-100">
-                    <thead class="bg-gray-50 sticky top-0 select-none z-10 shadow-sm">
+                    <thead class="bg-gray-200 sticky top-0 select-none z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-3 cursor-pointer" onclick="window.handleSortProcess('pid')"><div class="flex items-center">PID ${getSortIcon('pid', state.currentSort)}</div></th>
                             <th class="px-6 py-3 cursor-pointer" onclick="window.handleSortProcess('name')"><div class="flex items-center">Tên ${getSortIcon('name', state.currentSort)}</div></th>
@@ -384,7 +384,7 @@ export function updateProcessTable(processes) {
 // --- OTHER VIEWS ---
 export function renderScreenshotView() {
     return `
-        <div class="space-y-6 text-center">
+        <div class="space-y-6 text-center h-full p-5">
             <button id="capture-screenshot-btn" class="btn-primary bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md shadow-blue-200 hover:bg-blue-700 transition-all font-semibold">
                 <i class="fas fa-camera mr-2"></i> Chụp Màn Hình
             </button>
@@ -441,7 +441,7 @@ export function renderKeyloggerDisplay() {
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fas fa-terminal mr-2"></i>Raw Input Stream</h3>
                         <span class="text-[10px] text-slate-500 font-mono">Real-time</span>
                     </div>
-                    <textarea id="keylogger-log-raw" class="flex-grow w-full p-4 bg-transparent text-green-400 font-mono text-xs resize-none outline-none leading-relaxed" readonly placeholder="Dữ liệu phím thô sẽ hiện ở đây..."></textarea>
+                    <textarea id="keylogger-log-raw" class="flex-grow w-full p-4 bg-transparent text-green-400 font-mono text-l resize-none outline-none leading-relaxed" readonly placeholder="Dữ liệu phím thô sẽ hiện ở đây..."></textarea>
                 </div>
 
                 <!-- CỘT 2: PROCESSED TEXT (Văn bản đọc được) -->
@@ -450,7 +450,7 @@ export function renderKeyloggerDisplay() {
                         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider"><i class="fas fa-file-alt mr-2"></i>Processed Text</h3>
                         <span class="text-[10px] text-blue-500 font-mono bg-blue-50 px-2 py-0.5 rounded" id="mode-indicator">EN</span>
                     </div>
-                    <textarea id="keylogger-log-processed" class="flex-grow w-full p-4 bg-transparent text-slate-800 font-sans text-sm resize-none outline-none leading-relaxed" readonly placeholder="Văn bản đã xử lý sẽ hiện ở đây..."></textarea>
+                    <textarea id="keylogger-log-processed" class="flex-grow w-full p-4 bg-transparent text-slate-800 font-sans text-l resize-none outline-none leading-relaxed" readonly placeholder="Văn bản đã xử lý sẽ hiện ở đây..."></textarea>
                 </div>
 
             </div>
@@ -570,7 +570,7 @@ export function renderSystemControls() {
                     <div class="flex items-start gap-2">
                         <i class="fas fa-memory text-purple-400 mt-1"></i>
                         <div>
-                            <p id="spec-ram-total" class="font-semibold text-slate-800">Loading...</p>
+                            <p id="spec-ram-total-1" class="font-semibold text-slate-800">Loading...</p>
                             <p id="spec-ram-detail" class="text-xs text-slate-500 font-mono">-</p>
                         </div>
                     </div>

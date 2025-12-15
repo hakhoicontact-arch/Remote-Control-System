@@ -624,21 +624,47 @@ function doLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Sidebar Toggle (Nút 3 gạch)
     const toggleBtn = document.getElementById('sidebar-toggle');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', toggleSidebar);
-    }
+            const sidebar = document.getElementById('sidebar');
+            
+            // Logic đóng mở Sidebar
+            if(toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('sidebar-collapsed');
+                    sidebar.classList.toggle('w-64');
+                    
+                    // Khi đóng, nút 3 gạch sẽ nằm giữa
+                    if(sidebar.classList.contains('sidebar-collapsed')) {
+                        // Logic CSS class đã xử lý việc ẩn text
+                    }
+                });
+            }
 
-    // 2. Tab Click (Sidebar items)
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-             // currentTarget quan trọng để lấy đúng nút button (kể cả khi click vào icon bên trong)
-             const view = e.currentTarget.dataset.view;
-             if (typeof window.switchView === 'function') window.switchView(view);
-             else switchView(view); // Gọi hàm cục bộ
-        });
-    });
+            // Đổi tiêu đề khi bấm Tab
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    tabs.forEach(t => {
+                        t.classList.remove('bg-slate-100', 'shadow-inner');
+                    });
+                    this.classList.add('bg-slate-100', 'shadow-inner');
+                    
+                    const titleMap = {
+                        'applications': 'Quản lý Ứng dụng',
+                        'processes': 'Giám sát Tiến trình',
+                        'screenshot': 'Xem Màn hình',
+                        'keylogger': 'Nhật ký Phím',
+                        'webcam': 'Camera An ninh',
+                        'system': 'Cấu hình Hệ thống'
+                    };
+                    const view = this.getAttribute('data-view');
+                    const titleIcon = this.querySelector('i').className;
+                    
+                    // Cập nhật tiêu đề + Icon trên Header
+                    const pageTitle = document.getElementById('page-title');
+                    pageTitle.innerHTML = `<i class="mr-2 text-slate-500"></i> ${titleMap[view] || 'Dashboard'}`;
+                });
+            });
 
     // ... (Các event Login, Logout, Agent Select giữ nguyên) ...
     const agentSelect = document.getElementById('agent-select');
@@ -886,3 +912,23 @@ function enableAutoResize(inputId) {
 }
 
 enableAutoResize('process-search');
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    // Kiểm tra trạng thái hiện tại (đang thu nhỏ hay mở rộng?)
+    // w-20: Thu nhỏ (Collapsed)
+    // w-64: Mở rộng (Expanded)
+    const isCollapsed = sidebar.classList.contains('w-20');
+
+    if (isCollapsed) {
+        // MỞ RỘNG RA
+        sidebar.classList.remove('w-20', 'sidebar-collapsed');
+        sidebar.classList.add('w-64');
+    } else {
+        // THU NHỎ LẠI
+        sidebar.classList.remove('w-64');
+        sidebar.classList.add('w-20', 'sidebar-collapsed');
+    }
+}
