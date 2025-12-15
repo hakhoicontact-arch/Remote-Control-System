@@ -333,6 +333,9 @@ function switchView(view) {
             // Tự động khởi động phiên CMD khi vừa vào tab
             setTimeout(() => sendCommand('term_start'), 500);
             break;
+        case 'automation': 
+            html = Views.renderAutomationLayout(); 
+            break;
     }
     
     area.innerHTML = html;
@@ -618,6 +621,50 @@ function attachViewListeners(view) {
                 sendCommand('term_start');
             }, 800);
         };
+    }
+    else if (view === 'automation') {
+        // 1. Gửi tin nhắn Popup
+        const btnMsg = document.getElementById('send-msg-btn');
+        const inputMsg = document.getElementById('msg-input');
+        if (btnMsg) {
+            btnMsg.onclick = () => {
+                const text = inputMsg.value.trim();
+                if(text) {
+                    sendCommand('interact_msgbox', { text });
+                    inputMsg.value = ''; // Xóa sau khi gửi
+                    Utils.showModal("Thành công", "Đã gửi hộp thoại đến máy trạm.", null, true);
+                }
+            };
+        }
+
+        // 2. Gửi lệnh Nói (TTS)
+        const btnTts = document.getElementById('send-tts-btn');
+        const inputTts = document.getElementById('tts-input');
+        if (btnTts) {
+            btnTts.onclick = () => {
+                const text = inputTts.value.trim();
+                if(text) {
+                    sendCommand('interact_tts', { text });
+                    inputTts.value = '';
+                }
+            };
+        }
+
+        // 3. Macro Panic
+        const btnPanic = document.getElementById('macro-panic');
+        if (btnPanic) {
+            btnPanic.onclick = () => {
+                if(confirm("Bạn có chắc chắn muốn kích hoạt chế độ này? Nó sẽ làm gián đoạn người dùng.")) {
+                    sendCommand('interact_macro', { type: 'panic_mode' });
+                }
+            };
+        }
+
+        // 4. Macro Work
+        const btnWork = document.getElementById('macro-work');
+        if (btnWork) {
+            btnWork.onclick = () => sendCommand('interact_macro', { type: 'open_workspace' });
+        }
     }
 }
 

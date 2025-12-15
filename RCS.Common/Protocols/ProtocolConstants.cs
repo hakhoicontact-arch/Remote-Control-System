@@ -48,5 +48,10 @@ namespace RCS.Common.Protocols
         
         // --- TERMINAL EVENTS (Gửi về Client) ---
         public const string EventTerminalOutput = "term_output"; // Kết quả trả về
+
+        // --- NHÓM TƯƠNG TÁC & TỰ ĐỘNG HÓA ---
+        public const string ActionShowMessageBox = "interact_msgbox"; // Hiện thông báo
+        public const string ActionTextToSpeech = "interact_tts";      // Phát âm thanh
+        public const string ActionRunMacro = "interact_macro";        // Chạy kịch bản
     }
 }

@@ -725,3 +725,71 @@ export function renderTerminalLayout() {
         </div>
     `;
 }
+
+
+export function renderAutomationLayout() {
+    return `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+            
+            <!-- KHỐI 1: TƯƠNG TÁC TRỰC TIẾP -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <h3 class="font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+                    <i class="fas fa-comment-alt mr-2 text-blue-500"></i> Tương tác Người dùng
+                </h3>
+
+                <!-- Message Box -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Gửi Thông Báo (Popup)</label>
+                    <div class="flex gap-2">
+                        <input id="msg-input" type="text" class="flex-1 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nhập nội dung (VD: Máy bạn đã bị hack!)...">
+                        <button id="send-msg-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold transition-transform active:scale-95 shadow-lg shadow-blue-200">
+                            Gửi
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text to Speech -->
+                <div class="space-y-2 pt-4">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Máy Tính Biết Nói (TTS)</label>
+                    <div class="flex gap-2">
+                        <input id="tts-input" type="text" class="flex-1 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Nhập câu nói (English tốt hơn)...">
+                        <button id="send-tts-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl font-bold transition-transform active:scale-95 shadow-lg shadow-purple-200">
+                            Nói
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KHỐI 2: KỊCH BẢN TỰ ĐỘNG (MACRO) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 mb-4">
+                    <i class="fas fa-magic mr-2 text-orange-500"></i> Macro Script (Kịch bản)
+                </h3>
+
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- Macro 1: Panic Mode -->
+                    <button id="macro-panic" class="group flex items-center p-4 rounded-xl border border-red-100 bg-red-50 hover:bg-red-100 transition-all cursor-pointer text-left">
+                        <div class="w-12 h-12 bg-red-200 text-red-600 rounded-full flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-skull-crossbones"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="font-bold text-red-700">Chế độ hoảng loạn (Panic Mode)</h4>
+                            <p class="text-xs text-red-500 mt-1">Hiện cảnh báo -> Đọc lệnh hủy diệt -> Tắt trình duyệt -> Tắt máy.</p>
+                        </div>
+                    </button>
+
+                    <!-- Macro 2: Workspace -->
+                    <button id="macro-work" class="group flex items-center p-4 rounded-xl border border-green-100 bg-green-50 hover:bg-green-100 transition-all cursor-pointer text-left">
+                        <div class="w-12 h-12 bg-green-200 text-green-600 rounded-full flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="font-bold text-green-700">Mở không gian làm việc</h4>
+                            <p class="text-xs text-green-500 mt-1">Tự động mở Notepad, Calculator và chào mừng.</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}

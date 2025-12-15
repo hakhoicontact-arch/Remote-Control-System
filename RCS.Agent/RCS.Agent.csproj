@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
     <PackageReference Include="OpenCvSharp4.Windows" Version="4.11.0.20250507" />
     <PackageReference Include="System.Management" Version="10.0.1" />
+    <PackageReference Include="System.Speech" Version="10.0.1" />
     <ProjectReference Include="..\RCS.Common\RCS.Common.csproj" />
   </ItemGroup>
 

