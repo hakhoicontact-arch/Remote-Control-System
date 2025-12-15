@@ -136,7 +136,7 @@ dotnet run -- 192.168.1.10
 
 Dự án được thực hiện nhằm mục đích nghiên cứu và học tập môn Mạng Máy Tính.
 
-Authors: [Tên Nhóm Của Bạn] - Lớp 24CTT5.
+Authors: Lớp 24CTT5 - HCMUS.
 
 - Thành viên 1: Hà Đăng Khôi
 
