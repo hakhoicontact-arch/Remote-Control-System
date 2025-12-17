@@ -719,12 +719,54 @@ function doLogin(username, password) {
     errorMsg.classList.add('hidden');
     loginBtn.disabled = true;
 
-    startSignalR(dynamicUrl, username, password, {
+    const callbacks = {
         onResponse: handleResponse,
         onUpdate: handleRealtimeUpdate,
         onBinary: handleBinaryStream,
-        onChatMessage: handleChatMessage
-    })
+        onChatMessage: handleChatMessage,
+
+        // QUAN TRỌNG: Hàm này phải nằm TRONG object callbacks
+        onAgentListUpdate: (agentList) => {
+            console.log("Server báo danh sách Agent:", agentList);
+
+            // Logic: Nếu có ít nhất 1 agent, ta tự động chọn agent đầu tiên làm mục tiêu
+            if (agentList && agentList.length > 0) {
+                const firstAgent = agentList[0];
+
+                // 1. Cập nhật biến cấu hình để các hàm sendCommand dùng đúng ID này
+                CONFIG.AGENT_ID = firstAgent; 
+
+                // 2. Cập nhật giao diện (cái chữ Agent ID ở góc phải trên)
+                const displayEl = document.getElementById('agent-id-display');
+                if (displayEl) {
+                    displayEl.innerText = firstAgent;
+                    displayEl.classList.remove('text-slate-400');
+                    displayEl.classList.add('text-green-500'); // Hiệu ứng xanh báo hiệu online
+                }
+                document.getElementById('agent-id-display').innerText = firstAgent;
+                
+                // 3. Cập nhật trạng thái kết nối góc trái
+                Utils.updateStatus(`Linked: ${firstAgent}`, 'success');
+
+                // 4. Nếu đang ở tab System hoặc Process, reload lại dữ liệu ngay cho nóng
+                if (state.currentView === 'system' || state.currentView === 'processes') {
+                    setTimeout(() => sendCommand('sys_specs'), 500);
+                }
+
+            } else {
+                // Trường hợp không có Agent nào
+                CONFIG.AGENT_ID = null;
+                const displayEl = document.getElementById('agent-id-display');
+                if (displayEl) {
+                    displayEl.innerText = "Waiting...";
+                    displayEl.classList.remove('text-green-500');
+                }
+                Utils.updateStatus("Chờ Agent kết nối...", "warning");
+            }
+        }
+    };
+
+    startSignalR(dynamicUrl, username, password, callbacks)
     .then((conn) => {
         // SỬA LỖI: Nhận biến conn từ resolve
         state.connection = conn; 
@@ -1184,3 +1226,6 @@ window.toggleAboutItem = (id) => {
         icon.style.transform = 'rotate(0deg)'; // Xoay mũi tên xuống
     }
 };
+
+
+

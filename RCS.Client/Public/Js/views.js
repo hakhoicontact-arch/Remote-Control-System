@@ -804,16 +804,68 @@ export function renderAutomationLayout() {
 export function renderAboutLayout() {
     return `
     <div class="max-w-5xl mx-auto pb-12 space-y-10 animate-fade-in-up">
+        ${renderAboutHeader()}
         ${renderProjectOverview()}
         ${renderArchitectureSection()}
+        ${renderTechSpecs()}
         ${renderDetailedGuideSection()}
         ${renderTeamSection()}
+        ${renderAboutFooter()}
     </div>
     `;
 }
 
-// --- PHẦN 2: HERO & INTRO (GIỮ NGUYÊN) ---
-// [File: public/Js/views.js] - Thay thế hàm renderProjectOverview cũ
+// --- PHẦN 2: HERO & INTRO ---
+function renderTechSpecs() {
+    return `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h3 class="font-bold text-slate-800 dark:text-white mb-4 flex items-center uppercase tracking-wider text-sm">
+                <i class="fas fa-layer-group text-blue-500 mr-2"></i> Công nghệ lõi
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                    <span class="text-sm text-slate-500 dark:text-slate-400">Backend Framework</span>
+                    <span class="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">.NET 8 (ASP.NET Core)</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                    <span class="text-sm text-slate-500 dark:text-slate-400">Agent Runtime</span>
+                    <span class="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">.NET 8 Worker Service</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                    <span class="text-sm text-slate-500 dark:text-slate-400">Frontend Lib</span>
+                    <span class="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">Vanilla JS + TailwindCSS</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-slate-500 dark:text-slate-400">Computer Vision</span>
+                    <span class="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">OpenCVSharp 4</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h3 class="font-bold text-slate-800 dark:text-white mb-4 flex items-center uppercase tracking-wider text-sm">
+                <i class="fas fa-exchange-alt text-green-500 mr-2"></i> Giao thức truyền tải
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-start gap-3">
+                    <div class="mt-1"><i class="fas fa-bolt text-yellow-500 text-xs"></i></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">SignalR (WebSocket)</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Dùng cho C&C (Command & Control), Keylogger, Terminal. Đảm bảo tính toàn vẹn dữ liệu.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="mt-1"><i class="fas fa-video text-rose-500 text-xs"></i></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">UDP Socket</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Dùng cho Webcam Streaming. Ưu tiên tốc độ thấp (Low latency) chấp nhận mất gói tin.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
 
 function renderProjectOverview() {
     return `
@@ -881,7 +933,63 @@ function renderProjectOverview() {
     </div>`;
 }
 
-// --- PHẦN 3: KIẾN TRÚC HỆ THỐNG (GIỮ NGUYÊN) ---
+function renderAboutHeader() {
+    return `<div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-10">
+            <div class="flex items-center gap-4">
+                <div class="w-32 h-16 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center p-2">
+                    <img src="./Fit-logo-blue.png" alt="FIT Logo" class="w-full h-full object-contain opacity-90">
+                </div>
+                <div>
+                    <p class="font-bold text-slate-800 dark:text-slate-200 text-lg">Trường ĐH Khoa học Tự nhiên - ĐHQG TP.HCM</p>
+                    <p class="font-bold text-slate-600 dark:text-slate-200 text-lg">Khoa Công nghệ Thông tin</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-400">Cơ sở 1: 227 Nguyễn Văn Cừ, Phường Chợ Quán, TP. Hồ Chí Minh</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-400">Cơ sở 2: Khu đô thị ĐHQG-HCM, Phường Đông Hòa, TP. Hồ Chí Minh</p>
+                </div>
+            </div>
+
+            <div class="text-left md:text-right">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold mb-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    Lớp 24CTT5
+                </div>
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Mạng máy tính (Computer Networks)</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">GVHD: <span class="font-medium text-slate-800 dark:text-slate-200">ThS. Đỗ Hoàng Cường</span></p>
+            </div>
+        </div>`;
+}
+
+function renderAboutFooter() {
+    return `
+    <div class="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <div class="text-center md:text-left">
+                <h4 class="font-bold text-slate-700 dark:text-slate-300 text-sm">Remote Control System Pro</h4>
+                <p class="text-[10px] text-slate-400 mt-1">&copy; 2025 FIT - HCMUS. Project for Educational Purpose.</p>
+            </div>
+
+            <div class="flex gap-6 text-sm md:text-left">
+                <a href="#" class="text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">Documentation</a>
+                <a href="https://github.com/hakhoicontact-arch/Remote-Control-System" class="text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">Github Repo</a>
+            </div>
+
+            <div class="flex gap-3">
+                <span class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer">
+                    <a href="https://github.com/hakhoicontact-arch/Remote-Control-System" class="fab fa-github"></a>
+                </span>
+                <span class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer">
+                    <a href="mailto:hakhoi.contact@gmail.com" class="fas fa-envelope"></a>
+                </span>
+            </div>
+        </div>
+        <div class="text-center mt-10 text-[10px] text-slate-400">
+            <p>&copy; 2025 Remote Control System Project. All rights reserved.</p>
+            <p class="mt-1 opacity-60">Sản phẩm phục vụ mục đích học tập và nghiên cứu.</p>
+        </div>
+    </div>`;
+}
+
+// --- PHẦN 3: KIẾN TRÚC HỆ THỐNG  ---
 function renderArchitectureSection() {
     // (Đã rút gọn code HTML phần sơ đồ để tập trung vào phần mới, 
     // bạn hãy copy lại đoạn HTML sơ đồ từ câu trả lời trước vào đây nhé)
@@ -1000,7 +1108,7 @@ function renderDetailedGuideSection() {
     </div>`;
 }
 
-// --- HÀM DATA RIÊNG BIỆT (DỄ DÀNG CHỈNH SỬA NỘI DUNG) ---
+// --- HÀM DATA RIÊNG BIỆT  ---
 function getGuideData() {
     return [
         {
@@ -1597,51 +1705,69 @@ function getGuideData() {
     ];
 }
 
+// [File: public/Js/views.js]
+
 function renderTeamSection() {
     return `
-    <div class="border-t border-slate-200 dark:border-slate-700 pt-10 mt-10">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            <div class="col-span-1 text-center md:text-left space-y-4">
-                <img src="./Fit-logo-blue.png" alt="FIT - HCMUS Logo" class="h-6 mx-auto md:mx-0 opacity-90 dark:invert-[0.1] dark:brightness-150">
-                <div>
-                    <h3 class="font-bold text-slate-800 dark:text-white text-sm uppercase">Trường Đại học Khoa học tự nhiên</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Đại học Quốc gia TP. Hồ Chí Minh</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Khoa Công nghệ thông tin</p>
-                </div>
-            </div>
+    <div class="border-t border-slate-200 dark:border-slate-800 pt-10 mt-16">
 
-            <div class="col-span-1 md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+            <h4 class="text-sm font-bold text-slate-800 dark:text-white mb-6 flex items-center">
+                <span class="w-1 h-4 bg-indigo-500 rounded-full mr-3"></span>
+                Thành viên thực hiện
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 
-                <div class="text-center md:text-left">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Lớp Học phần</h4>
-                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">24CTT5</div>
-                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium mt-1">Môn: Mạng máy tính (Computer Networks)</p>
+                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg transition-all duration-300">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-110 transition-transform">
+                            K
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Hà Đăng Khôi</h5>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 font-mono border border-slate-200 dark:border-slate-600">
+                                    24120348
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="h-px w-full md:w-px md:h-16 bg-slate-200 dark:bg-slate-600"></div>
-
-                <div class="text-center md:text-right">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Nhóm thực hiện</h4>
-                    <ul class="space-y-1 text-sm text-slate-700 dark:text-slate-300">
-                        <li class="flex items-center justify-end gap-2">
-                            <span class="font-bold">Nguyễn Văn A</span> <span class="text-xs text-slate-400">(MSSV: 24xxxxxx)</span>
-                        </li>
-                        <li class="flex items-center justify-end gap-2">
-                            <span class="font-bold">Trần Thị B</span> <span class="text-xs text-slate-400">(MSSV: 24xxxxxx)</span>
-                        </li>
-                         <li class="flex items-center justify-end gap-2">
-                            <span class="font-bold">Lê Văn C</span> <span class="text-xs text-slate-400">(MSSV: 24xxxxxx)</span>
-                        </li>
-                    </ul>
+                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg transition-all duration-300">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-110 transition-transform">
+                            K
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Vương Đắc Gia Khiêm</h5>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 font-mono border border-slate-200 dark:border-slate-600">
+                                    24120342
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:shadow-lg transition-all duration-300">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-110 transition-transform">
+                            H
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Lê Đình Huy</h5>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 font-mono border border-slate-200 dark:border-slate-600">
+                                    24120324
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-        </div>
-        
-        <div class="text-center mt-10 text-[10px] text-slate-400">
-            <p>&copy; 2025 Remote Control System Project. All rights reserved.</p>
-            <p class="mt-1 opacity-60">Sản phẩm phục vụ mục đích học tập và nghiên cứu.</p>
         </div>
     </div>`;
 }

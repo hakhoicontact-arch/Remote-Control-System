@@ -15,6 +15,8 @@ namespace RCS.Server.Hubs
     {
         private readonly AgentCommandService _commandService;
 
+        private readonly IConnectionManager _connectionManager;
+
         // =========================================================================
         // MOCK DATABASE (DANH SÁCH TÀI KHOẢN)
         // Trong thực tế, phần này nên được thay thế bằng Database (SQL, MongoDB...)
@@ -27,9 +29,10 @@ namespace RCS.Server.Hubs
             { "Huy", "admin123" }
         };
 
-        public ClientHub(AgentCommandService commandService)
+        public ClientHub(AgentCommandService commandService, IConnectionManager connectionManager)
         {
             _commandService = commandService;
+            _connectionManager = connectionManager; // Gán biến
         }
 
         #region --- CONNECTION LIFECYCLE & AUTH (XÁC THỰC KẾT NỐI) ---
@@ -72,8 +75,14 @@ namespace RCS.Server.Hubs
                 Context.Abort(); 
                 return;
             }
+            
+            // 3. THÊM: Lấy danh sách Agent đang online
+            var onlineAgents = _connectionManager.GetAllActiveAgents();
 
-            Console.WriteLine($"[Auth] Thành công. User='{username}'");
+            // 4. THÊM: Gửi ngay cho Client vừa kết nối (Caller)
+            await Clients.Caller.SendAsync("UpdateAgentList", onlineAgents);
+
+            Console.WriteLine($"[Auth] Thành công. User='{username}'. Sent {onlineAgents} agents.");
             await base.OnConnectedAsync();
         }
 
