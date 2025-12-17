@@ -726,52 +726,73 @@ function doLogin(username, password) {
         onChatMessage: handleChatMessage,
 
         // QUAN TRỌNG: Hàm này phải nằm TRONG object callbacks
-        onAgentListUpdate: (agentList) => {
-            console.log("Danh sách Agent:", agentList);
-            
-            const selectEl = document.getElementById('agent-select');
-            if (!selectEl) return;
+        // [FILE: public/Js/main.js] - Trong object callbacks
 
-            // 1. Lưu lại giá trị đang chọn hiện tại (để không bị reset khi list cập nhật)
+        onAgentListUpdate: (agentList) => {
+            console.log("📡 Danh sách Agent:", agentList);
+            
+            const listContainer = document.getElementById('agent-list-container');
+            const badge = document.getElementById('agent-count-badge');
             const currentSelection = CONFIG.AGENT_ID;
 
+            if (!listContainer) return;
+
+            // 1. Cập nhật số lượng
+            if (badge) badge.textContent = agentList ? agentList.length : 0;
+
             // 2. Xóa danh sách cũ
-            selectEl.innerHTML = '';
+            listContainer.innerHTML = '';
 
             if (agentList && agentList.length > 0) {
-                // 3. Tạo các thẻ <option> cho từng máy
+                
+                // --- RENDER DANH SÁCH ITEM ---
                 agentList.forEach(agentId => {
-                    const option = document.createElement('option');
-                    option.value = agentId;
-                    option.textContent = agentId;
-                    option.className = "text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800"; // Style cho option
-                    selectEl.appendChild(option);
+                    const isSelected = (agentId === currentSelection);
+                    
+                    // HTML cho từng dòng Agent
+                    const itemHTML = `
+                        <li onclick="window.selectAgentItem('${agentId}')" 
+                            class="cursor-pointer px-4 py-3 flex items-center justify-between group hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border-b border-slate-50 dark:border-slate-700/50 last:border-0">
+                            
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-desktop text-slate-500 dark:text-slate-300 group-hover:text-blue-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200 font-mono group-hover:text-blue-600 dark:group-hover:text-blue-400">${agentId}</p>
+                                    <p class="text-[10px] text-green-500 font-semibold flex items-center gap-1">
+                                        <span class="w-1 h-1 rounded-full bg-green-500"></span> Online
+                                    </p>
+                                </div>
+                            </div>
+
+                            ${isSelected ? '<i class="fas fa-check-circle text-blue-500 text-sm"></i>' : ''}
+                        </li>
+                    `;
+                    
+                    listContainer.insertAdjacentHTML('beforeend', itemHTML);
                 });
 
-                // 4. Logic chọn máy
-                if (agentList.includes(currentSelection)) {
-                    // Nếu máy đang điều khiển vẫn online -> Giữ nguyên
-                    selectEl.value = currentSelection;
+                // 3. Logic chọn máy mặc định (như cũ)
+                if (!agentList.includes(currentSelection)) {
+                    // Nếu chưa chọn máy nào hoặc máy cũ mất kết nối -> Chọn máy đầu
+                    window.selectAgentItem(agentList[0]);
                 } else {
-                    // Nếu mới vào hoặc máy đang điều khiển bị mất kết nối -> Chọn máy đầu tiên
-                    const firstAgent = agentList[0];
-                    selectEl.value = firstAgent;
-                    CONFIG.AGENT_ID = firstAgent;
-                    
-                    // Thông báo chuyển máy
-                    Utils.updateStatus(`Đang điều khiển: ${firstAgent}`, 'success');
-                    
-                    // Reload dữ liệu cho máy mới
-                    if (state.currentView === 'system' || state.currentView === 'processes') {
-                        setTimeout(() => sendCommand('sys_specs'), 300);
-                    }
+                    // Cập nhật lại UI Trigger cho máy đang chọn (để đảm bảo đèn xanh sáng)
+                    updateTriggerUI(currentSelection, true);
                 }
+
             } else {
-                // Không có máy nào
-                const option = document.createElement('option');
-                option.textContent = "No Agents";
-                selectEl.appendChild(option);
+                // --- KHÔNG CÓ MÁY NÀO ---
+                listContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-6 text-slate-400">
+                        <i class="fas fa-search mb-2 text-2xl opacity-50"></i>
+                        <p class="text-xs">Không tìm thấy Agent nào.</p>
+                        <p class="text-[10px] mt-1 opacity-60">Hãy kiểm tra kết nối trên máy trạm.</p>
+                    </div>
+                `;
                 CONFIG.AGENT_ID = null;
+                updateTriggerUI("No Agents", false);
                 Utils.updateStatus("Chờ kết nối...", "warning");
             }
         }
@@ -1274,3 +1295,135 @@ if (agentSelect) {
         }
     });
 }
+
+
+window.toggleAgentDropdown = () => {
+    const menu = document.getElementById('agent-dropdown-menu');
+    const arrow = document.getElementById('agent-trigger-arrow');
+    
+    if (!menu) return;
+
+    if (menu.classList.contains('hidden')) {
+        // Mở menu
+        menu.classList.remove('hidden');
+        // Hiệu ứng Fade-in + Zoom-in nhẹ
+        setTimeout(() => {
+            menu.classList.remove('scale-95', 'opacity-0');
+            menu.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        // Đóng menu
+        closeAgentDropdown();
+    }
+};
+
+function closeAgentDropdown() {
+    const menu = document.getElementById('agent-dropdown-menu');
+    const arrow = document.getElementById('agent-trigger-arrow');
+    if (!menu) return;
+
+    // Hiệu ứng đóng
+    menu.classList.remove('scale-100', 'opacity-100');
+    menu.classList.add('scale-95', 'opacity-0');
+    
+    arrow.style.transform = 'rotate(0deg)';
+    
+    // Đợi animation xong mới ẩn hẳn
+    setTimeout(() => {
+        menu.classList.add('hidden');
+    }, 200);
+}
+
+// Hàm chọn Agent khi bấm vào item
+window.selectAgentItem = (agentId) => {
+    // 1. Cập nhật logic hệ thống
+    CONFIG.AGENT_ID = agentId;
+    
+    // 2. Cập nhật UI nút Trigger
+    updateTriggerUI(agentId, true); // true = Online
+
+    // 3. Đóng menu
+    closeAgentDropdown();
+
+    // 4. Thông báo & Reload dữ liệu (Logic cũ)
+    Utils.updateStatus(`Đã chuyển sang: ${agentId}`, 'success');
+    
+    if (state.currentView === 'system' || state.currentView === 'processes') {
+        setTimeout(() => sendCommand('sys_specs'), 300);
+    }
+    // ... (Thêm các logic reload view khác nếu cần)
+    if (state.currentView === 'webcam') {
+        state.webcam.isStreaming = false;
+        const vid = document.getElementById('webcam-stream');
+        if(vid) vid.style.display = 'none';
+        document.getElementById('webcam-placeholder').style.display = 'flex';
+    }
+    if (state.currentView === 'terminal') {
+        const out = document.getElementById('terminal-output');
+        if(out) out.innerHTML = '';
+        sendCommand('term_start');
+    }
+    
+    // 5. Render lại list để cập nhật dấu tích (Checkmark)
+    // (Optional: Nếu muốn item đang chọn sáng lên)
+};
+
+function updateTriggerUI(text, isOnline) {
+    const txt = document.getElementById('agent-trigger-text');
+    const box = document.getElementById('agent-trigger-icon-box');
+    
+    if(txt) txt.textContent = text;
+    
+    if(box) {
+        if(isOnline) {
+            // Xanh lá + Glow
+            box.className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] animate-pulse";
+        } else {
+            // Đỏ hoặc Xám
+            box.className = "w-2 h-2 rounded-full bg-slate-400";
+        }
+    }
+}
+
+// Đóng menu khi click ra ngoài
+document.addEventListener('click', (e) => {
+    const container = document.getElementById('custom-agent-dropdown');
+    if (container && !container.contains(e.target)) {
+        closeAgentDropdown();
+    }
+});
+
+window.refreshAgentList = () => {
+    const btn = document.getElementById('btn-refresh-agents');
+    const icon = document.getElementById('icon-refresh');
+    
+    // 1. Tạo hiệu ứng xoay icon để người dùng biết đang chạy
+    if(icon) icon.classList.add('fa-spin');
+    if(btn) {
+        btn.classList.add('text-slate-400', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Syncing...';
+    }
+
+    // 2. Logic cập nhật
+    // Vì SignalR tự động đẩy list mới khi có thay đổi, nút này chủ yếu mang tính trấn an.
+    // Tuy nhiên, ta có thể gửi một lệnh "Ping" hoặc yêu cầu Server gửi lại list nếu Server hỗ trợ.
+    // Nếu Server chưa có lệnh "GetAgents", ta chỉ cần giả lập delay.
+    
+    setTimeout(() => {
+        // Kết thúc hiệu ứng
+        if(icon) icon.classList.remove('fa-spin');
+        if(btn) {
+            btn.classList.remove('text-slate-400', 'cursor-not-allowed');
+            btn.innerHTML = '<i class="fas fa-check text-green-500"></i> Updated';
+            
+            // Trả lại trạng thái cũ sau 1s
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh List';
+            }, 1000);
+        }
+        
+        console.log("Danh sách Agent đã được đồng bộ (Real-time).");
+        
+    }, 800); // Giả lập delay 800ms
+};
