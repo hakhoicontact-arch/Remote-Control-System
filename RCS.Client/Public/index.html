@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RCS - Dashboard Điều Khiển</title>
 
-    <!-- 1. LOGO: Thay đường dẫn href bằng file ảnh của bạn -->
+    <!-- LOGO -->
     <link rel="icon" type="image/png" href="./assets/logo.png">
 
     <!-- Thư viện giao diện & Icon -->
@@ -20,14 +20,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.7/signalr.min.js"></script>
 
     
-    <!-- SỬA: Cấu hình Tailwind để hỗ trợ Dark Mode -->
+    <!-- Cấu hình Tailwind để hỗ trợ Dark Mode -->
     <script>
         tailwind.config = {
-            darkMode: 'class', // Quan trọng: Kích hoạt dark mode bằng class 'dark'
+            darkMode: 'class',
         }
     </script>
 
-    <!-- SCRIPT CHỐNG NHÁY SÁNG (Đặt ngay trong head) -->
+    <!-- SCRIPT CHỐNG NHÁY SÁNG -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');

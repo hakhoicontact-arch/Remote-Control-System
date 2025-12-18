@@ -1,7 +1,7 @@
 import { CONFIG, state } from './config.js';
 import * as Utils from './utils.js';
 import * as Views from './views.js';
-import { startSignalR, sendCommand } from './network.js';
+import { startSignalR, sendCommand, requestAgentList } from './network.js';
 import {processInputKey, renderDiskInfo, handleChatMessage, appendMessageToUI } from './utils.js';
 
 
@@ -420,6 +420,13 @@ function attachViewListeners(view) {
             const stopBtn = e.target.closest('button[data-action="stop-app"]');
             const startBtn = e.target.closest('button[data-action="start-app"]');
             if (stopBtn) {
+                const target = stopBtn.dataset.id; 
+    
+                Utils.showModal("Dừng App", `Dừng ứng dụng này?`, () => {
+                    stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    sendCommand('app_stop', { name: target });
+                });
+
                 const name = stopBtn.dataset.name || stopBtn.dataset.id;
                 Utils.showModal("Dừng App", `Dừng ứng dụng "${name}"?`, () => {
                     stopBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -435,7 +442,7 @@ function attachViewListeners(view) {
                 sendCommand('app_start', { name: startBtn.dataset.id });
 
                 // 3. Tự động làm mới danh sách sau 1.5s để cập nhật trạng thái "Running"
-                // (Cần delay để ứng dụng kịp khởi động và xuất hiện trong danh sách process)
+                // delay để ứng dụng kịp khởi động và xuất hiện trong danh sách process
                 setTimeout(() => sendCommand('app_list'), 1500);
             }
         });
@@ -1499,35 +1506,107 @@ function closeAgentDropdown() {
     }, 200);
 }
 
-// Hàm chọn Agent khi bấm vào item
 window.selectAgentItem = (agentId) => {
-    // 1. Cập nhật logic hệ thống
+    // Nếu đang chọn đúng máy đó rồi thì không làm gì cả (tránh reload không cần thiết)
+    if (CONFIG.AGENT_ID === agentId) return;
+
+    console.log(`[Switch] Đang chuyển từ ${CONFIG.AGENT_ID} sang ${agentId}`);
+
+    // 1. Cập nhật ID mục tiêu
     CONFIG.AGENT_ID = agentId;
     
-    // 2. Cập nhật UI nút Trigger
-    updateTriggerUI(agentId, true); // true = Online
+    // 2. Cập nhật UI nút Trigger (Dropdown button)
+    updateTriggerUI(agentId, true);
 
-    // 3. Đóng menu
+    // 3. Đóng menu dropdown
     closeAgentDropdown();
+
+    // 4. DỌN DẸP DỮ LIỆU CŨ (QUAN TRỌNG: Tránh hiển thị dữ liệu máy cũ)
+    state.globalProcessData = [];
+    state.globalAppData = [];
     
-    if (state.currentView === 'system' || state.currentView === 'processes') {
-        setTimeout(() => sendCommand('sys_specs'), 300);
-    }
-    // ... (Thêm các logic reload view khác nếu cần)
+    // Reset Terminal
+    const termOutput = document.getElementById('terminal-output');
+    if (termOutput) termOutput.innerHTML = '<div class="text-yellow-500 mb-2">--- Đã chuyển kết nối sang máy mới ---</div>';
+
+    // Reset Webcam UI nếu đang mở
     if (state.currentView === 'webcam') {
         state.webcam.isStreaming = false;
         const vid = document.getElementById('webcam-stream');
-        if(vid) vid.style.display = 'none';
-        document.getElementById('webcam-placeholder').style.display = 'flex';
+        const ph = document.getElementById('webcam-placeholder');
+        if (vid) { vid.style.display = 'none'; vid.src = ""; }
+        if (ph) ph.style.display = 'flex';
+        document.getElementById('cam-status-text').textContent = "Camera Offline";
     }
-    if (state.currentView === 'terminal') {
-        const out = document.getElementById('terminal-output');
-        if(out) out.innerHTML = '';
-        sendCommand('term_start');
-    }
+
+    // Reset Keylogger
+    const keylogRaw = document.getElementById('keylogger-log-raw');
+    if (keylogRaw) keylogRaw.value = "";
+
+    // 5. Cập nhật lại danh sách bên trái (để hiện dấu tích xanh ở máy mới)
+    // Chúng ta gọi lại hàm render danh sách agent nếu cần, hoặc chỉ update UI
+    const allItems = document.querySelectorAll('#agent-list-container li');
+    allItems.forEach(li => {
+        // Xóa icon check cũ
+        const checkIcon = li.querySelector('.fa-check-circle');
+        if(checkIcon) checkIcon.remove();
+        
+        // Thêm icon check vào dòng đang chọn
+        if(li.textContent.includes(agentId)) {
+             li.insertAdjacentHTML('beforeend', '<i class="fas fa-check-circle text-blue-500 text-sm"></i>');
+        }
+    });
+
+    // 6. TẢI DỮ LIỆU MỚI NGAY LẬP TỨC
+    Utils.updateStatus(`Đã kết nối: ${agentId}`, 'success');
     
-    // 5. Render lại list để cập nhật dấu tích (Checkmark)
-    // (Optional: Nếu muốn item đang chọn sáng lên)
+    // Gửi lệnh tương ứng với View đang mở
+    setTimeout(() => {
+        switch (state.currentView) {
+            case 'system':
+            case 'processes':
+                document.getElementById('process-list-body').innerHTML = Utils.getLoadingRow(5);
+                sendCommand('sys_specs');
+                if (state.currentView === 'processes') sendCommand('process_list');
+                break;
+            case 'applications':
+                document.getElementById('app-list-body').innerHTML = Utils.getLoadingRow(4);
+                sendCommand('app_list');
+                break;
+            case 'terminal':
+                sendCommand('term_start');
+                break;
+        }
+    }, 300); // Delay nhẹ để Server kịp xử lý
+};
+
+
+// --- 2. SỬA HÀM REFRESH (Để gọi Server thật) ---
+window.refreshAgentList = async () => {
+    const btn = document.getElementById('btn-refresh-agents');
+    const icon = document.getElementById('icon-refresh');
+    
+    // 1. UI Loading
+    if(icon) icon.classList.add('fa-spin');
+    if(btn) {
+        btn.classList.add('text-slate-400', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Syncing...';
+    }
+
+    // 2. GỌI SERVER THẬT
+    await requestAgentList();
+
+    // Lưu ý: Chúng ta không cần reset UI button ở đây ngay lập tức.
+    // Vì khi Server trả về "UpdateAgentList", callback `onAgentListUpdate` (ở đoạn code login) sẽ chạy.
+    // Tuy nhiên, để UX mượt mà, ta sẽ set timeout reset button
+    
+    setTimeout(() => {
+        if(icon) icon.classList.remove('fa-spin');
+        if(btn) {
+            btn.classList.remove('text-slate-400', 'cursor-not-allowed');
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh List';
+        }
+    }, 1000); 
 };
 
 function updateTriggerUI(text, isOnline) {
@@ -1554,32 +1633,3 @@ document.addEventListener('click', (e) => {
         closeAgentDropdown();
     }
 });
-
-window.refreshAgentList = () => {
-    const btn = document.getElementById('btn-refresh-agents');
-    const icon = document.getElementById('icon-refresh');
-    
-    // 1. Tạo hiệu ứng xoay icon để người dùng biết đang chạy
-    if(icon) icon.classList.add('fa-spin');
-    if(btn) {
-        btn.classList.add('text-slate-400', 'cursor-not-allowed');
-        btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Syncing...';
-    }
-
-    setTimeout(() => {
-        // Kết thúc hiệu ứng
-        if(icon) icon.classList.remove('fa-spin');
-        if(btn) {
-            btn.classList.remove('text-slate-400', 'cursor-not-allowed');
-            btn.innerHTML = '<i class="fas fa-check text-green-500"></i> Updated';
-            
-            // Trả lại trạng thái cũ sau 1s
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh List';
-            }, 1000);
-        }
-        
-        console.log("Danh sách Agent đã được đồng bộ (Real-time).");
-        
-    }, 800); // Giả lập delay 800ms
-};

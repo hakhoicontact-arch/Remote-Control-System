@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
+
 namespace RCS.Agent.Services.Windows
 {
     public class ApplicationManager
@@ -258,46 +259,63 @@ namespace RCS.Agent.Services.Windows
         /// Dừng ứng dụng. Thử đóng nhẹ nhàng trước, nếu không được thì buộc dừng (Kill).
         /// </summary>
         /// <param name="pathOrName">Đường dẫn file hoặc tên ứng dụng.</param>
-        public void StopApp(string pathOrName)
-        {
-            try 
-            {
-                string processName = Path.GetFileNameWithoutExtension(pathOrName);
-                
-                // Tìm tất cả process có tên trùng
-                var procs = Process.GetProcessesByName(processName);
-                
-                // Fallback: Tìm theo tên cửa sổ nếu không tìm thấy exe
-                if (procs.Length == 0)
-                {
-                    procs = Process.GetProcesses().Where(p => p.MainWindowTitle.Contains(pathOrName)).ToArray();
-                }
+        // [FILE: RCS.Agent/Services/Windows/ApplicationManager.cs]
 
-                foreach (var p in procs) 
+        public void StopApp(string nameOrPath)
+        {
+            if (string.IsNullOrEmpty(nameOrPath)) return;
+
+            // 1. Chuẩn hóa tên Process
+            string processName = nameOrPath;
+
+            // Nếu gửi xuống là đường dẫn (vd: C:\...\chrome.exe) -> Lấy tên file "chrome"
+            if (nameOrPath.Contains("\\") || nameOrPath.Contains("/"))
+            {
+                processName = Path.GetFileNameWithoutExtension(nameOrPath);
+            }
+            // Nếu gửi xuống là "notepad.exe" -> Cắt bỏ ".exe"
+            else if (nameOrPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                processName = nameOrPath.Substring(0, nameOrPath.Length - 4);
+            }
+
+            // 2. Tìm tất cả Process trùng tên
+            var processes = Process.GetProcessesByName(processName);
+
+            if (processes.Length == 0)
+            {
+                // Fallback: Thử tìm theo tên cửa sổ (nếu tên process không khớp)
+                // Cách này rủi ro hơn nhưng hữu ích cho các app như Calculator
+                /*
+                processes = Process.GetProcesses()
+                                .Where(p => p.MainWindowTitle.Contains(processName, StringComparison.OrdinalIgnoreCase))
+                                .ToArray();
+                */
+                Console.WriteLine($"[StopApp] Không tìm thấy process nào có tên: {processName}");
+                return;
+            }
+
+            // 3. Thực hiện Kill
+            foreach (var p in processes)
+            {
+                try
                 {
-                    try 
+                    // Thử đóng nhẹ nhàng trước
+                    p.CloseMainWindow();
+                    p.WaitForExit(1000); // Chờ 1s
+
+                    if (!p.HasExited)
                     {
-                        // Bước 1: Yêu cầu đóng nhẹ nhàng (giống bấm nút X)
-                        p.CloseMainWindow();
-                        
-                        // Bước 2: Chờ tối đa 1 giây xem nó có chịu tắt không
-                        if (!p.WaitForExit(1000)) 
-                        {
-                            // Bước 3: Nếu lì lợm không tắt -> KILL ngay lập tức
-                            p.Kill();
-                            
-                            // Bước 4: Chờ Windows dọn dẹp xong process này
-                            p.WaitForExit(); 
-                        }
+                        p.Kill(); // Kill cưỡng bức nếu chưa tắt
                     }
-                    catch 
-                    {
-                        // Nếu có lỗi (ví dụ Access Denied), cố gắng Kill lần nữa
-                        try { p.Kill(); } catch { }
-                    }
+                    Console.WriteLine($"[StopApp] Đã đóng PID {p.Id} ({p.ProcessName})");
                 }
-            } 
-            catch { }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[StopApp] Lỗi khi đóng PID {p.Id}: {ex.Message}");
+                    // Gợi ý: Có thể gửi log lỗi này về Client nếu cần
+                }
+            }
         }
 
         // =========================================================================

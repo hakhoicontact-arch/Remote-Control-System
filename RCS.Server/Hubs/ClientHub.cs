@@ -70,16 +70,17 @@ namespace RCS.Server.Hubs
             {
                 Console.WriteLine($"[Auth] Thất bại. Từ chối kết nối.");
                 
-                // Quan trọng: Ngắt kết nối ngay lập tức nếu sai mật khẩu.
+                // Ngắt kết nối ngay lập tức nếu sai mật khẩu.
                 // Client phía Web sẽ nhận được sự kiện Error/Closed.
                 Context.Abort(); 
                 return;
             }
             
-            // 3. THÊM: Lấy danh sách Agent đang online
+            // 3. Lấy danh sách Agent đang online
             var onlineAgents = _connectionManager.GetAllActiveAgents();
+            Console.WriteLine("[Auth] Đã lấy danh sách Agent online.");
 
-            // 4. THÊM: Gửi ngay cho Client vừa kết nối (Caller)
+            // 4. Gửi ngay cho Client vừa kết nối (Caller)
             await Clients.Caller.SendAsync("UpdateAgentList", onlineAgents);
 
             Console.WriteLine($"[Auth] Thành công. User='{username}'. Sent {onlineAgents} agents.");
@@ -95,6 +96,16 @@ namespace RCS.Server.Hubs
         /// </summary>
         /// <param name="agentId">ID của máy trạm cần điều khiển.</param>
         /// <param name="command">Nội dung lệnh (Action, Params).</param>
+
+         public async Task GetActiveAgents()
+        {
+            // 1. Lấy danh sách mới nhất từ ConnectionManager
+            var onlineAgents = _connectionManager.GetAllActiveAgents();
+            
+            // 2. Trả về cho chính người gọi (Client)
+            await Clients.Caller.SendAsync("UpdateAgentList", onlineAgents);
+        }
+        
         public async Task SendToAgent(string agentId, CommandMessage command)
         {
             try

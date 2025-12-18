@@ -5,7 +5,7 @@
 // Nhiệm vụ:
 //      1. Cấu hình Dependency Injection (DI Container).
 //      2. Cấu hình Pipeline xử lý Request (Middleware).
-//      3. Khởi động SignalR Hubs và các Service chạy ngầm (UDP Listener).
+//      3. Khởi động Hubs và các Service chạy ngầm (UDP Listener).
 // -----------------------------------------------------------------------------
 
 using Microsoft.AspNetCore.Builder;
@@ -20,7 +20,6 @@ namespace RCS.Server
     public class Program
     {
         // Hằng số cấu hình kích thước tối đa cho gói tin (Ảnh/Video)
-        // Được sử dụng bởi cả SignalR và UDP Listener
         public const int ReceiveMessageSize_MB = 50;
 
         public static void Main(string[] args)
@@ -29,9 +28,8 @@ namespace RCS.Server
 
             #region --- 1. SERVICE CONFIGURATION (CẤU HÌNH DỊCH VỤ) ---
 
-            // A. Cấu hình SignalR
             // Tăng giới hạn kích thước tin nhắn mặc định (32KB) lên 50MB
-            // để Server có thể nhận được ảnh chụp màn hình hoặc luồng video chất lượng cao từ Agent.
+            // Server có thể nhận được ảnh chụp màn hình hoặc luồng video chất lượng cao từ Agent.
             builder.Services.AddSignalR(options => {
                 options.MaximumReceiveMessageSize = ReceiveMessageSize_MB * 1024 * 1024;
             });
@@ -45,21 +43,21 @@ namespace RCS.Server
                     policy.SetIsOriginAllowed(origin => true)
                           .AllowAnyHeader()
                           .AllowAnyMethod()
-                          .AllowCredentials(); // Bắt buộc phải có để SignalR hoạt động qua CORS
+                          .AllowCredentials();
                 });
             });
-
-            // C. Đăng ký Dependency Injection (DI)
             
             // ConnectionManager: Singleton để duy trì danh sách Agent online xuyên suốt vòng đời ứng dụng
             builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
+            Console.WriteLine("Kết nối Manager đã được đăng ký.");
             
             // AgentCommandService: Service trung gian giúp gửi lệnh từ ClientHub sang AgentHub
             builder.Services.AddSingleton<AgentCommandService>();
+            Console.WriteLine("Dịch vụ Lệnh Agent đã được đăng ký.");
 
-            // D. Hosted Services (Dịch vụ chạy ngầm)
-            // QUAN TRỌNG: Khởi chạy UDP Listener để mở cổng 6000 nhận video streaming
+            // Khởi chạy UDP Listener để mở cổng 6000 nhận video streaming
             builder.Services.AddHostedService<UdpListenerService>();
+            Console.WriteLine("Dịch vụ Lắng nghe UDP đã được đăng ký.");
 
             #endregion
 
@@ -74,7 +72,6 @@ namespace RCS.Server
             // Kích hoạt CORS (Phải đặt giữa UseRouting và UseEndpoints/MapHub)
             app.UseCors("AllowClient");
 
-            // Map các đường dẫn SignalR Hub
             // 1. /clienthub -> Nơi Web Dashboard kết nối
             app.MapHub<ClientHub>("/clienthub");
             
@@ -87,7 +84,7 @@ namespace RCS.Server
             #endregion
 
             // --- RUN APP ---
-            app.Run();
+            app.Run("http://0.0.0.0:5000");
         }
     }
 }

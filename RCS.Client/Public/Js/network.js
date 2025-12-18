@@ -54,3 +54,13 @@ export async function sendCommand(action, params = {}) {
         console.warn("Chưa kết nối hoặc mất kết nối tới Server.");
     }
 }
+
+export async function requestAgentList() {
+    if (state.connection && state.connection.state === signalR.HubConnectionState.Connected) {
+        try {
+            await state.connection.invoke("GetActiveAgents");
+        } catch (err) {
+            console.error("Lỗi lấy danh sách Agent:", err);
+        }
+    }
+}

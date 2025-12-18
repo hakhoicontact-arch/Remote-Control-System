@@ -133,7 +133,6 @@ export function updateAppTable(apps) {
                  <span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span> Stopped
                </span>`;
 
-        // === KHÔI PHỤC LOGIC NÚT CŨ Ở ĐÂY ===
         // Nút Running (Đỏ): bg-red-50 text-red-600 ...
         // Nút Stopped (Xanh): bg-green-50 text-green-600 ...
         const btnClass = isRunning 
@@ -143,6 +142,8 @@ export function updateAppTable(apps) {
         const btnIcon = isRunning ? 'fa-stop-circle' : 'fa-play-circle';
         const btnText = isRunning ? 'Đóng' : 'Mở';
         const btnAction = isRunning ? 'stop-app' : 'start-app';
+
+        const targetId = app.path ? app.path : app.name;
 
         // Icon chữ cái
         const firstLetter = (app.name || '?').charAt(0).toUpperCase();
@@ -180,7 +181,7 @@ export function updateAppTable(apps) {
             </td>
 
             <td class="px-6 py-4 whitespace-nowrap text-right">
-                <button data-action="${btnAction}" data-id="${app.name}" class="${btnClass} px-4 py-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 ml-auto w-24 font-semibold text-sm">
+                <button data-action="${btnAction}" data-id="${targetId}" class="${btnClass} px-4 py-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 ml-auto w-24 font-semibold text-sm">
                     <i class="fas ${btnIcon}"></i> ${btnText}
                 </button>
             </td>
@@ -1883,7 +1884,33 @@ function getGuideData() {
                         </div>
 
                         <div class="rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden mb-2">
-                            <img src="./assets/guides/terminal_demo.png" alt="Giao diện dòng lệnh CMD" class="w-full h-auto object-cover opacity-90 hover:opacity-100 transition-opacity" onerror="this.style.display='none'">
+                            <div class="bg-slate-900 rounded-lg p-4 font-mono text-xs text-slate-300 border border-slate-700 shadow-inner">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div class="text-green-400 mb-2 border-b border-slate-700 pb-1">Initialize connection... Ready</div>
+                                        <ul class="space-y-2">
+                                            <li><span class="text-yellow-400"> > ipconpig</li>
+                                            <li><span class="text-yellow-400</span>D:\\Code\\MMT\\RCS</li>
+                                            <li><span class="text-yellow-400"></span>WIndows IP Configuration</li>
+                                            <li><span class="text-yellow-400"></span></li>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <div class="text-red-400 font-bold mb-2 border-b border-slate-700 pb-1"># ACTION</div>
+                                        <ul class="space-y-2">
+                                            <li><span class="text-yellow-400">shutdown /s /t 0</span> : Tắt máy ngay</li>
+                                            <li><span class="text-yellow-400">shutdown /r /t 0</span> : Khởi động lại</li>
+                                            <li><span class="text-yellow-400">net user</span> : Quản lý tài khoản</li>
+                                            <li><span class="text-yellow-400">cd [path]</span> : Chuyển thư mục</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 pt-3 border-t border-slate-700 text-[10px] text-slate-500 italic">
+                                    > Lưu ý: Một số lệnh yêu cầu quyền Administrator để thực thi.
+                                </div>
+                            </div>
                             <div class="bg-slate-50 dark:bg-slate-900 p-2 text-[10px] text-center text-slate-500 italic">
                                 Hình 1: Giao diện dòng lệnh hỗ trợ màu sắc và phản hồi thời gian thực.
                             </div>
