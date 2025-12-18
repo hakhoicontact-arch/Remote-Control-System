@@ -1,6 +1,6 @@
 import { CONFIG, state } from './config.js';
 import * as Utils from './utils.js';
-import * as Views from './views.js';
+import * as Views from './Views/index.js';
 import { startSignalR, sendCommand, requestAgentList } from './network.js';
 import {processInputKey, renderDiskInfo, handleChatMessage, appendMessageToUI } from './utils.js';
 
