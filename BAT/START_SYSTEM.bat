@@ -2,9 +2,6 @@
 title RCS SYSTEM LAUNCHER
 color 0A
 
-:: --- BƯỚC 1: Lùi từ BAT ra RCS ---
-cd ..
-
 :: Kiểm tra xem đã Build chưa
 if not exist "RCS_Output\Server\RCS.Server.exe" (
     echo [LOI] Khong tim thay file chay!
