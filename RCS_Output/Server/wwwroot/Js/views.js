@@ -1158,27 +1158,27 @@ function renderProjectOverview() {
         <div class="text-center py-20">
             
             <div class="inline-flex items-center justify-center w-28 h-28 rounded-[2.5rem] rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white mb-6 shadow-xl shadow-blue-500/30 transform hover:scale-110 transition-transform duration-500">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-                <style>
-                    .st_dynamic_stroke {
-                        fill: none;
-                        stroke: #FFFFFF;
-                        stroke-width: 5;
-                        stroke-linecap: round;
-                        stroke-linejoin: round;
-                    }
-                    .st_dynamic_fill {
-                        fill: #FFFFFF;
-                    }
-                </style>
-                <g>
-                    <path class="st_dynamic_stroke" d="M12,44 A 23,23 0 1,1 48,47"/>
-                    <polygon class="st_dynamic_fill" points="52,44 40,36 44,54 "/>
+    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<style>
+    .st_dynamic_stroke {
+        fill: none;
+        stroke: #FFFFFF;
+        stroke-width: 5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .st_dynamic_fill {
+        fill: #FFFFFF;
+    }
+</style>
+<g>
+    <path class="st_dynamic_stroke" d="M12,44 A 23,23 0 1,1 48,47"/>
+    <polygon class="st_dynamic_fill" points="52,44 40,36 44,54 "/>
 
-                    <line class="st_dynamic_stroke" x1="32" y1="32" x2="50" y2="50"/>
-                    <polygon class="st_dynamic_fill" points="54,54 38,52 52,38 "/>
-                </g>
-            </svg>
+    <line class="st_dynamic_stroke" x1="32" y1="32" x2="50" y2="50"/>
+    <polygon class="st_dynamic_fill" points="54,54 38,52 52,38 "/>
+</g>
+</svg>
             </div>
             
             <h2 class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">

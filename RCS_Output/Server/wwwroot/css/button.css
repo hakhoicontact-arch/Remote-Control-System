@@ -1,0 +1,236 @@
+/* =========================================
+   STYLE CHO NÚT ĐĂNG NHẬP (LOGIN BUTTON)
+   ID: #login-btn
+   ========================================= */
+
+#login-btn {
+  --primary-color: #645bff;
+  --secondary-color: #fff;
+  --hover-color: #111;
+  --arrow-width: 10px;
+  --arrow-stroke: 2px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 20px;
+  color: var(--secondary-color);
+  padding: 1em 1.8em;
+  background: var(--primary-color);
+  display: flex;
+  transition: 0.2s background;
+  align-items: center;
+  gap: 0.6em;
+  font-weight: bold;
+  cursor: pointer; /* Thêm cái này để có hình bàn tay khi di chuột vào */
+}
+
+#login-btn .arrow-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#login-btn .arrow {
+  margin-top: 1px;
+  width: var(--arrow-width);
+  background: var(--primary-color);
+  height: var(--arrow-stroke);
+  position: relative;
+  transition: 0.2s;
+}
+
+#login-btn .arrow::before {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  border: solid var(--secondary-color);
+  border-width: 0 var(--arrow-stroke) var(--arrow-stroke) 0;
+  display: inline-block;
+  top: -3px;
+  right: 3px;
+  transition: 0.2s;
+  padding: 3px;
+  transform: rotate(-45deg);
+}
+
+#login-btn:hover {
+  background-color: var(--hover-color);
+}
+
+#login-btn:hover .arrow {
+  background: var(--secondary-color);
+}
+
+#login-btn:hover .arrow:before {
+  right: 0;
+}
+
+
+/* From Uiverse.io by cybrejon */ 
+a {
+  color: rgba(255, 255, 255, 0.692);
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.397);
+  background: rgba(255, 255, 255, 0.068);
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 600;
+  gap: 8px;
+  border-radius: 5px;
+  margin: 0 5px;
+  transition: 0.2s;
+  border: 1px solid transparent;
+}
+
+a:hover {
+  border-color: rgba(255, 255, 255, 0.623);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.144),
+    rgba(255, 255, 255, 0.247),
+    rgba(255, 255, 255, 0.39)
+  );
+  box-shadow: 0 6px rgba(255, 255, 255, 0.623);
+  transform: translateY(-6px);
+}
+
+a:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+
+/* =========================================
+   STYLE CHO NÚT ĐĂNG XUẤT (LOGOUT BUTTON)
+   ID: #logout-btn
+   ========================================= */
+#logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 45px;
+  height: 45px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition-duration: .3s;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
+  background-color: rgb(255, 65, 65); /* Màu đỏ */
+  padding: 0; /* Quan trọng: Reset padding để icon nằm chính giữa */
+}
+
+/* --- PHẦN ICON (Lúc bình thường) --- */
+#logout-sign {
+  width: 100%;
+  transition-duration: .3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#logout-sign svg {
+  width: 18px; /* Kích thước icon */
+  fill: white; /* Đảm bảo icon màu trắng */
+}
+
+#logout-sign svg path {
+  fill: white;
+}
+
+/* --- PHẦN CHỮ (Lúc bình thường ẩn đi) --- */
+#logout-text {
+  position: absolute;
+  right: 0%;
+  width: 0%;
+  opacity: 0;
+  color: white;
+  font-size: 1em;
+  font-weight: 600;
+  transition-duration: .3s;
+  white-space: nowrap;
+}
+
+/* --- HIỆU ỨNG KHI DI CHUỘT (HOVER) --- */
+
+/* 1. Nút dài ra */
+#logout-btn:hover {
+  width: 125px;
+  border-radius: 40px;
+  transition-duration: .3s;
+}
+
+/* 2. Icon trượt sang trái (Sửa lỗi ở đây: #sign -> #logout-sign) */
+#logout-btn:hover #logout-sign {
+  width: 30%;
+  transition-duration: .3s;
+  padding-left: 15px;
+}
+
+/* 3. Chữ hiện ra (Sửa lỗi ở đây: #text -> #logout-text) */
+#logout-btn:hover #logout-text {
+  opacity: 1;
+  width: 70%;
+  transition-duration: .3s;
+  padding-right: 15px;
+}
+
+/* --- HIỆU ỨNG CLICK --- */
+#logout-btn:active {
+  transform: translate(2px ,2px);
+}
+
+/* =========================================
+   STYLE CHO NÚT STATS (TOGGLE SWITCH STYLE)
+   ID: #toggle-stats-btn
+   ========================================= */
+
+#toggle-stats-btn {
+  /* --- Cấu trúc cơ bản --- */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* --- Màu nền & Text mặc định (TRẠNG THÁI SÁNG/NỔI) --- */
+  background: #e0e5ec; 
+  color: #64748b;      /* Xám nhạt */
+  
+  /* --- Kích thước (Giữ nguyên như bạn yêu cầu) --- */
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem; /* text-sm */
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  
+  /* --- Hiệu ứng 3D Nổi (Sáng) --- */
+  box-shadow: 
+    6px 6px 10px 0 rgba(163, 177, 198, 0.5), 
+    -6px -6px 10px 0 rgba(255, 255, 255, 0.8);
+    
+  transition: all 0.2s ease;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Hiệu ứng khi di chuột vào (hơi nổi lên xíu) */
+#toggle-stats-btn:hover {
+  transform: translateY(-2px);
+  color: #334155;
+}
+
+/* --- TRẠNG THÁI ĐÃ BẬT (TỐI/LÚN) --- */
+/* Khi nút có thêm class "active" */
+#toggle-stats-btn.active {
+  /* Đổi màu chữ sang xanh để biết đang bật */
+  color: #2563eb; 
+  background: #e0e5ec; /* Giữ nền nhưng đổi bóng */
+  
+  /* Quan trọng: Bóng đổ vào trong (Inset) tạo cảm giác lún/tối */
+  box-shadow: 
+    inset 4px 4px 8px 0 rgba(163, 177, 198, 0.6), 
+    inset -4px -4px 8px 0 rgba(255, 255, 255, 0.8);
+    
+  transform: translateY(0); /* Không nổi lên nữa */
+}

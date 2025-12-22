@@ -66,6 +66,9 @@ namespace RCS.Server
 
             #region --- 2. MIDDLEWARE PIPELINE (LUỒNG XỬ LÝ) ---
 
+            app.UseDefaultFiles(); // Cho phép phục vụ index.html mặc định
+            app.UseStaticFiles();  // Cho phép phục vụ file css, js, ảnh trong wwwroot
+
             // Kích hoạt Routing
             app.UseRouting();
             

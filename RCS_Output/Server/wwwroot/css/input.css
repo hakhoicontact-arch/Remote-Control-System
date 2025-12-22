@@ -1,0 +1,142 @@
+/* =========================================
+   STYLE CHO Ô NHẬP THÔNG TIN
+   ID: #rcs-input
+   ========================================= */
+   
+  .rcs-input-group {
+  display: flex;
+  line-height: 30px;
+  align-items: center;
+  position: relative;
+  width: 100%; /* Sửa max-width thành width 100% để nó co giãn theo khung */
+  margin-bottom: 1rem; /* Thêm khoảng cách dưới cho thoáng */
+}
+
+/* Thay .input -> .rcs-input-field */
+.rcs-input-field {
+  width: 100%;
+  height: 48px; /* Tăng nhẹ chiều cao cho dễ bấm */
+  line-height: 30px;
+  padding: 0 1rem;
+  padding-left: 3rem; /* Chừa chỗ cho icon */
+  border: 2px solid #e2e8f0; /* Màu viền mặc định nhạt hơn */
+  border-radius: 12px; /* Bo góc khớp với nút bấm */
+  outline: none;
+  background-color: #f8fafc;
+  color: #334155;
+  transition: .4s ease;
+  font-size: 0.95rem;
+}
+
+.rcs-input-field::placeholder {
+  color: #94a3b8;
+}
+
+/* Hiệu ứng khi bấm vào */
+.rcs-input-field:focus, 
+.rcs-input-field:hover {
+  outline: none;
+  border-color: #2563eb; /* Đổi sang màu xanh Blue-600 của dự án bạn */
+  background-color: #fff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); /* Bóng màu xanh */
+}
+
+/* Thay .icon -> .rcs-input-icon */
+.rcs-input-icon {
+  position: absolute;
+  left: 1rem;
+  fill: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  color: #64748b; /* Màu icon mặc định */
+  transition: 0.4s;
+}
+
+/* Khi input được focus thì icon cũng đổi màu theo cho đẹp */
+.rcs-input-field:focus + .rcs-input-icon,
+.rcs-input-group:focus-within .rcs-input-icon {
+    color: #2563eb;
+    transform: scale(1.1);
+}
+
+
+
+
+
+
+
+
+/* Container chung để giữ icon và input */
+.uiv-search-box {
+  position: relative;
+  display: flex; /* Giúp căn chỉnh tốt hơn */
+  align-items: center;
+}
+
+/* Icon Search */
+.uiv-search-box svg {
+  position: absolute;
+  left: 14px; /* Căn trái */
+  top: 50%;
+  transform: translateY(-50%); /* Căn giữa chiều dọc chuẩn xác */
+  width: 18px;
+  height: 18px;
+  pointer-events: none; /* Để click vào icon vẫn focus vào input */
+  z-index: 10;
+}
+
+/* Style chung cho Input */
+.uiv-search-input {
+  padding: 10px 10px 10px 40px; /* Padding trái 40px để tránh đè lên icon */
+  border-radius: 9999px; /* Full rounded */
+  border: solid 1px #d1d5db; /* Màu gray-300 của Tailwind để đồng bộ */
+  outline: none;
+  opacity: 0.9;
+  transition: all 0.3s ease-in-out;
+  background-color: white;
+}
+
+.uiv-search-input:focus {
+  opacity: 1;
+  border-color: #3b82f6; /* Đổi màu viền khi focus (blue-500) */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* --- LOGIC RIÊNG CHO TỪNG LOẠI --- */
+
+/* Loại 1: Animation mở rộng chiều rộng (Dành cho Process Search) */
+.uiv-anim-width {
+  width: 200px; /* Tương đương w-48 */
+}
+.uiv-anim-width:focus {
+  width: 380px; /* Mở rộng ra khi click vào */
+}
+
+/* Loại 1: Animation mở rộng chiều rộng (Dành cho app Search) */
+.uiv-anim-width-app-search {
+  width: 400px; /* Tương đương w-48 */
+}
+.uiv-anim-width-app-search:focus {
+  width: 400px; /* Mở rộng ra khi click vào */
+}
+
+/* Loại 2: Lấp đầy khoảng trống (Dành cho App Search - flex-grow) */
+.uiv-full-width {
+  width: 100%;
+  height: 100%;
+}
+
+.auto-expand-input {
+    min-width: 192px; /* Độ rộng tối thiểu (bằng w-48) */
+    max-width: 500px; /* Giới hạn tối đa để không vỡ layout */
+    transition: width 0.1s ease-out; /* Chuyển động mượt */
+    box-sizing: border-box; /* Tính cả padding vào độ rộng */
+}
+
+/* Thêm class này vào CSS */
+.auto-expand-input {
+    min-width: 192px; /* Độ rộng tối thiểu (bằng w-48) */
+    max-width: 500px; /* Giới hạn tối đa để không vỡ layout */
+    transition: width 0.1s ease-out; /* Chuyển động mượt */
+    box-sizing: border-box; /* Tính cả padding vào độ rộng */
+}
